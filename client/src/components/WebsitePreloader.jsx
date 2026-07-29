@@ -51,25 +51,22 @@ const WebsitePreloader = ({ onComplete }) => {
       <div className="relative z-10 flex flex-col items-center text-center space-y-6 max-w-md w-full">
         
         {/* Animated Festive Gold Motif Logo */}
-        <div className="relative flex items-center justify-center w-24 h-24">
+        <div className="relative flex items-center justify-center p-3">
           {/* Outer rotating gold mandala outline */}
           <div className="absolute inset-0 rounded-full border border-dashed border-[#D4B896]/50 animate-spin-slow"></div>
           {/* Pulse aura */}
           <div className="absolute inset-2 rounded-full border border-[#D4B896]/30 animate-ping opacity-20"></div>
-          {/* Inner Icon */}
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#D4B896] via-[#B8986C] to-[#8C6D43] flex items-center justify-center shadow-lg shadow-[#D4B896]/20">
-            <Sparkles className="w-8 h-8 text-[#1F1C18] animate-pulse" />
+          {/* Inner Logo Image */}
+          <div className="relative z-10 bg-[#FAF7F2] p-3 rounded-2xl shadow-xl shadow-[#D4B896]/20 border border-[#D4B896]/40">
+            <img src="/logo.png" alt="Parampara India Logo" className="h-16 w-auto object-contain" />
           </div>
         </div>
 
-        {/* Brand Name & Tagline */}
+        {/* Brand Tagline */}
         <div className="space-y-1">
           <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#D4B896]">
             Est. 2026 • India
           </span>
-          <h1 className="font-serif-display text-3xl sm:text-4xl font-semibold tracking-wider text-[#FAF7F2]">
-            PARAMPARA <span className="text-[#D4B896] font-normal italic">INDIA</span>
-          </h1>
           <p className="text-xs uppercase tracking-widest text-[#D4B896]/80 font-medium">
             Festive Luxury & Artisanal Heritage
           </p>

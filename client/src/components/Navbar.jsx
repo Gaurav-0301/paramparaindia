@@ -44,13 +44,12 @@ const Navbar = () => {
           </button>
 
           {/* Brand Logo */}
-          <Link to="/" className="flex flex-col items-center group">
-            <span className="font-serif-display text-2xl sm:text-3xl font-semibold tracking-widest text-[#3A342E] group-hover:text-[#9CAF97] transition-colors">
-              PARAMPARA
-            </span>
-            <span className="text-[9px] uppercase tracking-[0.3em] text-[#D4B896] font-medium -mt-1">
-              INDIA • FESTIVE LUXURY
-            </span>
+          <Link to="/" className="flex items-center gap-2 group py-1">
+            <img
+              src="/logo.png"
+              alt="Parampara India Logo"
+              className="h-10 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+            />
           </Link>
 
           {/* Desktop Navigation */}

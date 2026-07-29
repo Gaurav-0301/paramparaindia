@@ -47,9 +47,13 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 py-12">
           {/* Brand Info */}
           <div className="space-y-4">
-            <h3 className="font-serif-display text-2xl font-semibold text-[#FAF7F2] tracking-wider">
-              PARAMPARA
-            </h3>
+            <Link to="/" className="inline-block">
+              <img
+                src="/logo.png"
+                alt="Parampara India Logo"
+                className="h-12 sm:h-14 w-auto object-contain bg-[#FAF7F2] p-1.5 rounded-xl shadow-md"
+              />
+            </Link>
             <p className="text-xs text-[#FAF7F2]/70 leading-relaxed">
               Celebrating India's rich cultural heritage through soft-luxury handcrafted Rakhis, artisanal mithai, and timeless keepsake hampers.
             </p>
