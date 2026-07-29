@@ -30,7 +30,7 @@ if (!fs.existsSync(uploadDir)) {
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
-  limits: { fileSize: 20 * 1024 * 1024 } // 20MB limit
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit to handle high-res camera images (HEIC, RAW, AVIF, PNG)
 });
 
 // Helper: Stream buffer to Cloudinary with auto compression

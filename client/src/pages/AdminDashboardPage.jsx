@@ -921,7 +921,7 @@ const AdminDashboardPage = () => {
                   <span className="block text-[10px] font-semibold text-[#3A342E]">📁 Select Image From File Manager:</span>
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/*,.heic,.heif,.avif,.webp,.png,.jpg,.jpeg,.gif,.svg,.bmp,.jfif,.tiff"
                     onChange={handleCategoryFileUpload}
                     className="block w-full text-[11px] text-[#3A342E] file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:font-semibold file:bg-[#3A342E] file:text-white hover:file:bg-[#9CAF97] cursor-pointer"
                   />
@@ -1118,7 +1118,7 @@ const AdminDashboardPage = () => {
                   <span className="block text-[11px] font-bold text-[#3A342E]">📁 Select Image File(s) From Device / File Manager:</span>
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/*,.heic,.heif,.avif,.webp,.png,.jpg,.jpeg,.gif,.svg,.bmp,.jfif,.tiff"
                     multiple
                     onChange={(e) => handleFileUpload(e)}
                     className="block w-full text-xs text-[#3A342E] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#3A342E] file:text-[#FAF7F2] hover:file:bg-[#9CAF97] cursor-pointer"
@@ -1167,7 +1167,7 @@ const AdminDashboardPage = () => {
                       <input
                         id={`row-file-input-${idx}`}
                         type="file"
-                        accept="image/*"
+                        accept="image/*,.heic,.heif,.avif,.webp,.png,.jpg,.jpeg,.gif,.svg,.bmp,.jfif,.tiff"
                         onChange={(e) => handleFileUpload(e, idx)}
                         className="hidden"
                       />
