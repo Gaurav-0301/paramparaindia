@@ -219,6 +219,8 @@ const AdminDashboardPage = () => {
     setShowProductModal(true);
   };
 
+  const [uploadingImage, setUploadingImage] = useState(false);
+
   const handleAddImageInput = () => {
     setProductForm(prev => ({
       ...prev,
@@ -239,6 +241,86 @@ const AdminDashboardPage = () => {
       updated[index] = value;
       return { ...prev, images: updated };
     });
+  };
+
+  // Upload file from File Manager (Device Storage)
+  const handleFileUpload = async (e, targetIndex = null) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingImage(true);
+    try {
+      if (files.length === 1) {
+        const formData = new FormData();
+        formData.append('image', files[0]);
+        const res = await axios.post('/api/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        const uploadedUrl = res.data.imageUrl;
+
+        if (targetIndex !== null) {
+          handleImageInputChange(targetIndex, uploadedUrl);
+        } else {
+          setProductForm(prev => ({
+            ...prev,
+            images: [...prev.images.filter(img => img.trim() !== ''), uploadedUrl]
+          }));
+        }
+      } else {
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+          formData.append('images', files[i]);
+        }
+        const res = await axios.post('/api/upload/multiple', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        const uploadedUrls = res.data.imageUrls || [];
+        setProductForm(prev => ({
+          ...prev,
+          images: [...prev.images.filter(img => img.trim() !== ''), ...uploadedUrls]
+        }));
+      }
+    } catch (err) {
+      console.error('File Upload Server Error, using FileReader Base64 fallback:', err);
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64Url = reader.result;
+        if (targetIndex !== null) {
+          handleImageInputChange(targetIndex, base64Url);
+        } else {
+          setProductForm(prev => ({
+            ...prev,
+            images: [...prev.images.filter(img => img.trim() !== ''), base64Url]
+          }));
+        }
+      };
+      reader.readAsDataURL(files[0]);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleCategoryFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await axios.post('/api/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setCategoryForm(prev => ({ ...prev, image: res.data.imageUrl }));
+    } catch (err) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setCategoryForm(prev => ({ ...prev, image: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const handleSaveProduct = async (e) => {
@@ -809,15 +891,37 @@ const AdminDashboardPage = () => {
               </div>
 
               <div>
-                <label className="block font-semibold mb-1">Circle Image URL</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="https://images.unsplash.com/..."
-                  value={categoryForm.image}
-                  onChange={(e) => setCategoryForm({ ...categoryForm, image: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border border-[#D4B896]/50 bg-white font-mono"
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-semibold">Circle Image URL / File</label>
+                  <label
+                    htmlFor="cat-file-upload-input"
+                    className="cursor-pointer text-[10px] font-semibold bg-[#3A342E] text-white hover:bg-[#9CAF97] px-2 py-0.5 rounded transition-all"
+                  >
+                    📁 Choose Image File
+                  </label>
+                  <input
+                    id="cat-file-upload-input"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCategoryFileUpload}
+                    className="hidden"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  {categoryForm.image && (
+                    <div className="w-9 h-9 rounded-full overflow-hidden border border-[#D4B896] shrink-0 bg-stone-100">
+                      <img src={categoryForm.image} alt="" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <input
+                    type="text"
+                    required
+                    placeholder="Image URL or File Path"
+                    value={categoryForm.image}
+                    onChange={(e) => setCategoryForm({ ...categoryForm, image: e.target.value })}
+                    className="flex-1 p-2.5 rounded-lg border border-[#D4B896]/50 bg-white font-mono"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -975,18 +1079,43 @@ const AdminDashboardPage = () => {
 
               {/* Product Images Section */}
               <div className="p-3.5 bg-[#FAF7F2] rounded-xl border border-[#D4B896]/50 space-y-2.5">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <label className="block font-bold text-[#3A342E] flex items-center gap-1.5">
-                    <ImageIcon className="w-4 h-4 text-[#D4B896]" /> Product Images (URL Section) *
+                    <ImageIcon className="w-4 h-4 text-[#D4B896]" /> Product Images *
                   </label>
-                  <button
-                    type="button"
-                    onClick={handleAddImageInput}
-                    className="text-[11px] font-semibold text-[#9CAF97] hover:text-[#3A342E] flex items-center gap-1 bg-white px-2 py-1 rounded-md border border-[#D4B896]/40"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Add Image URL
-                  </button>
+                  
+                  <div className="flex items-center gap-2">
+                    {/* File Manager Upload Button */}
+                    <label
+                      htmlFor="product-file-upload-main"
+                      className="cursor-pointer text-[11px] font-semibold bg-[#3A342E] text-white hover:bg-[#9CAF97] px-2.5 py-1 rounded-md transition-all flex items-center gap-1 shadow-2xs"
+                    >
+                      📁 Upload From File Manager
+                    </label>
+                    <input
+                      id="product-file-upload-main"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(e) => handleFileUpload(e)}
+                      className="hidden"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={handleAddImageInput}
+                      className="text-[11px] font-semibold text-[#9CAF97] hover:text-[#3A342E] flex items-center gap-1 bg-white px-2 py-1 rounded-md border border-[#D4B896]/40"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add URL
+                    </button>
+                  </div>
                 </div>
+
+                {uploadingImage && (
+                  <p className="text-[11px] font-semibold text-[#9CAF97] animate-pulse">
+                    Uploading image file(s) from device... Please wait.
+                  </p>
+                )}
 
                 <div className="space-y-2">
                   {productForm.images.map((imgUrl, idx) => (
@@ -1007,10 +1136,26 @@ const AdminDashboardPage = () => {
                       <input
                         type="text"
                         required={idx === 0}
-                        placeholder={`Image URL #${idx + 1} (https://...)`}
+                        placeholder={`Image URL or File Path #${idx + 1}`}
                         value={imgUrl}
                         onChange={(e) => handleImageInputChange(idx, e.target.value)}
                         className="flex-1 p-2 rounded-lg border border-[#D4B896]/50 bg-white font-mono text-[11px]"
+                      />
+
+                      {/* Row File Chooser Button */}
+                      <label
+                        htmlFor={`row-file-input-${idx}`}
+                        className="cursor-pointer p-1.5 text-[10px] font-semibold bg-amber-50 text-[#3A342E] hover:bg-amber-100 rounded border border-amber-200 shrink-0"
+                        title="Choose image file from file manager"
+                      >
+                        📁 File
+                      </label>
+                      <input
+                        id={`row-file-input-${idx}`}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleFileUpload(e, idx)}
+                        className="hidden"
                       />
 
                       {productForm.images.length > 1 && (
