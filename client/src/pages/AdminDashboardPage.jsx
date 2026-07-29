@@ -219,13 +219,41 @@ const AdminDashboardPage = () => {
     setShowProductModal(true);
   };
 
+  const handleAddImageInput = () => {
+    setProductForm(prev => ({
+      ...prev,
+      images: [...prev.images, '']
+    }));
+  };
+
+  const handleRemoveImageInput = (index) => {
+    setProductForm(prev => ({
+      ...prev,
+      images: prev.images.filter((_, idx) => idx !== index)
+    }));
+  };
+
+  const handleImageInputChange = (index, value) => {
+    setProductForm(prev => {
+      const updated = [...prev.images];
+      updated[index] = value;
+      return { ...prev, images: updated };
+    });
+  };
+
   const handleSaveProduct = async (e) => {
     e.preventDefault();
     try {
+      const cleanedImages = productForm.images.filter(img => img && img.trim() !== '');
+      const payload = {
+        ...productForm,
+        images: cleanedImages.length > 0 ? cleanedImages : ['https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?w=800&auto=format&fit=crop&q=80']
+      };
+
       if (editingProduct) {
-        await axios.put(`/api/products/admin/${editingProduct._id}`, productForm);
+        await axios.put(`/api/products/admin/${editingProduct._id}`, payload);
       } else {
-        await axios.post('/api/products/admin/create', productForm);
+        await axios.post('/api/products/admin/create', payload);
       }
       setShowProductModal(false);
       setEditingProduct(null);
@@ -942,6 +970,61 @@ const AdminDashboardPage = () => {
                     onChange={(e) => setProductForm({ ...productForm, badge: e.target.value })}
                     className="w-full p-2.5 rounded-lg border border-[#D4B896]/50 bg-white"
                   />
+                </div>
+              </div>
+
+              {/* Product Images Section */}
+              <div className="p-3.5 bg-[#FAF7F2] rounded-xl border border-[#D4B896]/50 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="block font-bold text-[#3A342E] flex items-center gap-1.5">
+                    <ImageIcon className="w-4 h-4 text-[#D4B896]" /> Product Images (URL Section) *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleAddImageInput}
+                    className="text-[11px] font-semibold text-[#9CAF97] hover:text-[#3A342E] flex items-center gap-1 bg-white px-2 py-1 rounded-md border border-[#D4B896]/40"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add Image URL
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {productForm.images.map((imgUrl, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <div className="w-10 h-10 rounded-lg overflow-hidden border border-[#D4B896]/50 bg-stone-100 shrink-0 flex items-center justify-center">
+                        {imgUrl ? (
+                          <img
+                            src={imgUrl}
+                            alt=""
+                            className="w-full h-full object-cover"
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                          />
+                        ) : (
+                          <ImageIcon className="w-4 h-4 text-stone-400" />
+                        )}
+                      </div>
+
+                      <input
+                        type="text"
+                        required={idx === 0}
+                        placeholder={`Image URL #${idx + 1} (https://...)`}
+                        value={imgUrl}
+                        onChange={(e) => handleImageInputChange(idx, e.target.value)}
+                        className="flex-1 p-2 rounded-lg border border-[#D4B896]/50 bg-white font-mono text-[11px]"
+                      />
+
+                      {productForm.images.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImageInput(idx)}
+                          className="p-1.5 text-red-500 hover:text-red-700 transition-colors"
+                          title="Remove Image URL"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
 
