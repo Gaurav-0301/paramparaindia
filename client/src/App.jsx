@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { FestivalProvider } from './context/FestivalContext';
 
+import WebsitePreloader from './components/WebsitePreloader';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import MiniCartDrawer from './components/MiniCartDrawer';
@@ -28,10 +29,14 @@ import {
 } from './pages/LegalPages';
 
 function App() {
+  const [showPreloader, setShowPreloader] = useState(true);
+
   return (
     <AuthProvider>
       <CartProvider>
         <FestivalProvider>
+          {showPreloader && <WebsitePreloader onComplete={() => setShowPreloader(false)} />}
+
           <Router>
             <div className="min-h-screen flex flex-col bg-[#FAF7F2] text-[#3A342E]">
               <Navbar />
