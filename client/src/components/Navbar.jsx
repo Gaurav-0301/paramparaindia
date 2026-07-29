@@ -30,9 +30,9 @@ const Navbar = () => {
         ✨ Raksha Bandhan Campaign Live • Free Doorstep Shipping on orders over ₹499
       </div>
 
-      {/* Sticky Glass Navbar */}
-      <header className="sticky top-0 z-40 w-full glass-panel border-b border-[#D4B896]/30 transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-18 flex items-center justify-between">
+      {/* Sticky Solid Navbar */}
+      <header className="sticky top-0 z-40 w-full bg-[#FAF7F2] border-b border-[#D4B896]/30 shadow-xs transition-all duration-300">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-4">
           
           {/* Mobile menu trigger */}
           <button
@@ -44,24 +44,24 @@ const Navbar = () => {
           </button>
 
           {/* Brand Logo & Name */}
-          <Link to="/" className="flex items-center gap-2.5 group py-1">
+          <Link to="/" className="flex items-center gap-2.5 group py-1 shrink-0">
             <img
               src="/lotus-icon.png"
               alt="Parampara India Lotus Emblem"
               className="h-8 sm:h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
             />
             <div className="flex flex-col">
-              <span className="font-serif-display text-xl sm:text-2xl font-semibold tracking-widest text-[#3A342E] group-hover:text-[#9CAF97] transition-colors leading-none">
+              <span className="font-serif-display text-xl sm:text-2xl font-semibold tracking-widest text-[#3A342E] group-hover:text-[#9CAF97] transition-colors leading-none whitespace-nowrap">
                 PARAMPARA
               </span>
-              <span className="text-[9px] uppercase tracking-[0.25em] text-[#D4B896] font-medium mt-0.5">
+              <span className="text-[9px] uppercase tracking-[0.25em] text-[#D4B896] font-medium mt-0.5 whitespace-nowrap">
                 INDIA • FESTIVE LUXURY
               </span>
             </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-8 text-xs uppercase tracking-widest font-medium text-[#3A342E]">
+          <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-xs uppercase tracking-widest font-medium text-[#3A342E] whitespace-nowrap">
             <Link to="/" className="gold-thread-hover hover:text-[#9CAF97] transition-colors py-1">
               Home
             </Link>
