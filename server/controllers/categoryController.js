@@ -83,23 +83,23 @@ const createCategory = async (req, res) => {
 // @route PUT /api/categories/admin/:id
 const updateCategory = async (req, res) => {
   try {
-    const category = await Category.findById(req.params.id);
+    const updateData = { ...req.body };
+    delete updateData.__v;
+
+    if (updateData.name) {
+      updateData.slug = updateData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    }
+
+    const category = await Category.findByIdAndUpdate(
+      req.params.id,
+      { $set: updateData },
+      { returnDocument: 'after', runValidators: true }
+    );
+
     if (!category) {
       return res.status(404).json({ message: 'Category not found' });
     }
 
-    if (req.body.name && req.body.name !== category.name) {
-      category.name = req.body.name;
-      category.slug = req.body.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-    }
-
-    if (req.body.parentCategory !== undefined) category.parentCategory = req.body.parentCategory;
-    if (req.body.image !== undefined) category.image = req.body.image;
-    if (req.body.description !== undefined) category.description = req.body.description;
-    if (req.body.displayOrder !== undefined) category.displayOrder = Number(req.body.displayOrder);
-    if (req.body.isActive !== undefined) category.isActive = Boolean(req.body.isActive);
-
-    await category.save();
     res.status(200).json({ success: true, category });
   } catch (error) {
     res.status(500).json({ message: error.message });

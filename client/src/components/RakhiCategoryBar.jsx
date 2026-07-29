@@ -24,7 +24,7 @@ const RakhiCategoryBar = ({ activeSubCategory, onSelectSubCategory, title = "Exp
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await axios.get('/api/categories?parentCategory=Rakhis');
+        const res = await axios.get(`/api/categories?parentCategory=Rakhis&_t=${Date.now()}`);
         if (res.data && res.data.categories && res.data.categories.length > 0) {
           setCategories(res.data.categories);
         }

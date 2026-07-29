@@ -132,11 +132,20 @@ const createProduct = async (req, res) => {
 // @route PUT /api/admin/products/:id
 const updateProduct = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ message: 'Product not found' });
+    const updateData = { ...req.body };
+    delete updateData.__v;
 
-    Object.assign(product, req.body);
-    await product.save();
+    if (updateData.name) {
+      updateData.slug = updateData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    }
+
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      { $set: updateData },
+      { returnDocument: 'after', runValidators: true }
+    );
+
+    if (!product) return res.status(404).json({ message: 'Product not found' });
 
     res.status(200).json({ success: true, product });
   } catch (error) {
