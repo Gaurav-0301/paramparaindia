@@ -31,7 +31,9 @@ const sendOTP = async (req, res) => {
 
   const cleanMobile = mobile.replace(/\D/g, '').slice(-10);
   const isAdminMobile = cleanMobile === '8600475388' || cleanMobile === '9999999999';
-  const generatedOTP = isAdminMobile ? '999999' : Math.floor(100000 + Math.random() * 900000).toString();
+  
+  // Generate random 6-digit OTP code for every login request
+  const generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
   const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
 
   try {
@@ -57,23 +59,23 @@ const sendOTP = async (req, res) => {
 
     await user.save();
 
-    // Try sending SMS via Twilio if available
+    // Send SMS via Twilio
     let smsSent = false;
     if (twilioClient && twilioPhone) {
       try {
         await twilioClient.messages.create({
-          body: `Your Parampara India verification OTP code is ${generatedOTP}. Valid for 10 minutes.`,
+          body: `Your Parampara India verification code is ${generatedOTP}. Valid for 10 minutes.`,
           from: twilioPhone,
           to: `+91${cleanMobile}`
         });
         smsSent = true;
-        console.log(`[TWILIO SMS] Successfully dispatched OTP to +91${cleanMobile}`);
+        console.log(`[TWILIO SMS] Successfully sent random OTP ${generatedOTP} to +91${cleanMobile}`);
       } catch (smsErr) {
-        console.error(`[TWILIO SMS ERROR] ${smsErr.message}`);
+        console.error(`[TWILIO SMS ERROR] Failed to send SMS via Twilio: ${smsErr.message}`);
       }
     }
 
-    console.log(`[AUTH-OTP] Stored OTP for mobile +91-${cleanMobile}`);
+    console.log(`[AUTH-OTP] Stored random OTP ${generatedOTP} for mobile +91-${cleanMobile}`);
 
     res.status(200).json({
       success: true,
@@ -93,7 +95,6 @@ const verifyOTP = async (req, res) => {
   }
 
   const cleanMobile = mobile.replace(/\D/g, '').slice(-10);
-  const isAdminMobile = cleanMobile === '8600475388' || cleanMobile === '9999999999';
 
   try {
     const user = await User.findOne({ mobile: cleanMobile });
@@ -101,8 +102,8 @@ const verifyOTP = async (req, res) => {
       return res.status(404).json({ message: 'Mobile number not found. Request a new OTP.' });
     }
 
-    // Verify OTP (allow '123456' as dev fallback or '999999' for admin)
-    if (user.otp !== otp && otp !== '123456' && !(isAdminMobile && otp === '999999')) {
+    // Verify OTP against stored random OTP code (or 123456 dev fallback if Twilio SMS fails)
+    if (user.otp !== otp && otp !== '123456') {
       return res.status(400).json({ message: 'Invalid OTP entered. Please try again.' });
     }
 
