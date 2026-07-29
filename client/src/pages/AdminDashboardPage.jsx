@@ -6,8 +6,10 @@ import {
   LayoutDashboard, ShoppingBag, Package, Tag, MessageSquare, Download, Plus, Edit, Trash2, CheckCircle, RefreshCw, Crown, Sparkles, Layers
 } from 'lucide-react';
 import axios from 'axios';
+import { useFestival } from '../context/FestivalContext';
 
 const AdminDashboardPage = () => {
+  const { refetchFestival } = useFestival();
   const [activeTab, setActiveTab] = useState('analytics'); // analytics, products, orders, coupons, reviews, festival
 
   // Analytics data
@@ -193,11 +195,12 @@ const AdminDashboardPage = () => {
 
   const handleSwitchFestival = async (festivalKey) => {
     try {
-      await axios.post('/api/festival/admin/switch', { festivalKey });
-      alert(`Switched active festival theme to ${festivalKey}`);
-      fetchFestivals();
+      const res = await axios.post('/api/festival/admin/switch', { festivalKey });
+      alert(`Switched active festival theme to ${res.data.festival?.title || festivalKey}`);
+      await fetchFestivals();
+      if (refetchFestival) await refetchFestival();
     } catch (err) {
-      alert('Failed to switch festival theme');
+      alert(err.response?.data?.message || 'Failed to switch festival theme');
     }
   };
 
@@ -516,29 +519,55 @@ const AdminDashboardPage = () => {
       {/* 5. Festival Engine Tab */}
       {activeTab === 'festival' && (
         <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-[#D4B896]/40 space-y-6">
-          <h2 className="font-serif-display text-xl font-semibold text-[#3A342E] flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-[#D4B896]" /> Dynamic Multi-Festival Theme Switcher
-          </h2>
-          <p className="text-xs text-[#3A342E]/70">
-            Easily relaunch paramparaindia.shop for Diwali, Holi, or Karva Chauth by activating a festival preset.
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-serif-display text-xl font-semibold text-[#3A342E] flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-[#D4B896]" /> Dynamic Multi-Festival Theme Engine
+              </h2>
+              <p className="text-xs text-[#3A342E]/70 mt-1">
+                Instantly switch paramparaindia.shop for Raksha Bandhan, Diwali, Karwa Chauth, Bhai Dooj, or Holi.
+              </p>
+            </div>
+            <button
+              onClick={fetchFestivals}
+              className="px-3 py-1.5 bg-white border border-[#D4B896]/50 rounded-xl text-xs font-semibold text-[#3A342E] flex items-center gap-1.5 hover:bg-[#FAF7F2]"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-[#9CAF97]" /> Refresh Themes
+            </button>
+          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {[
-              { key: 'raksha-bandhan', title: 'Raksha Bandhan', date: 'Aug 2026', bg: 'https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?w=600&auto=format&fit=crop&q=80' },
-              { key: 'diwali', title: 'Diwali Lights & Sweets', date: 'Nov 2026', bg: 'https://images.unsplash.com/photo-1577083552431-6e5fd01aa342?w=600&auto=format&fit=crop&q=80' },
-              { key: 'holi', title: 'Holi Festive Celebrations', date: 'Mar 2027', bg: 'https://images.unsplash.com/photo-1576444356170-66073046b1bc?w=600&auto=format&fit=crop&q=80' }
-            ].map(fest => (
-              <div key={fest.key} className="p-4 bg-white/70 rounded-2xl border border-[#EFE6D8] space-y-3">
-                <div className="aspect-video rounded-xl overflow-hidden">
-                  <img src={fest.bg} alt="" className="w-full h-full object-cover" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {festivals.map(fest => (
+              <div
+                key={fest.festivalKey || fest._id}
+                className={`p-4 rounded-2xl border transition-all ${
+                  fest.isActive
+                    ? 'bg-white border-[#9CAF97] ring-2 ring-[#9CAF97]/50 shadow-md'
+                    : 'bg-white/70 border-[#EFE6D8]'
+                } space-y-3 relative`}
+              >
+                {fest.isActive && (
+                  <span className="absolute top-6 right-6 z-10 px-2.5 py-1 rounded-full bg-[#9CAF97] text-white text-[10px] uppercase font-bold tracking-wider shadow-sm flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3" /> Active Live Theme
+                  </span>
+                )}
+                <div className="aspect-video rounded-xl overflow-hidden bg-stone-100">
+                  <img src={fest.bannerImage} alt={fest.title} className="w-full h-full object-cover" />
                 </div>
-                <h3 className="font-serif-display font-semibold text-base text-[#3A342E]">{fest.title}</h3>
+                <div>
+                  <h3 className="font-serif-display font-semibold text-base text-[#3A342E]">{fest.title}</h3>
+                  <p className="text-xs text-[#3A342E]/70 line-clamp-1 mt-0.5">{fest.tagline}</p>
+                </div>
                 <button
-                  onClick={() => handleSwitchFestival(fest.key)}
-                  className="w-full py-2 bg-[#3A342E] text-white text-xs font-semibold uppercase rounded-xl hover:bg-[#9CAF97]"
+                  onClick={() => handleSwitchFestival(fest.festivalKey)}
+                  disabled={fest.isActive}
+                  className={`w-full py-2.5 text-xs font-semibold uppercase tracking-wider rounded-xl transition-all ${
+                    fest.isActive
+                      ? 'bg-[#9CAF97]/20 text-[#9CAF97] cursor-default font-bold'
+                      : 'bg-[#3A342E] text-[#FAF7F2] hover:bg-[#9CAF97]'
+                  }`}
                 >
-                  Activate Theme
+                  {fest.isActive ? 'Active Theme' : 'Activate Theme'}
                 </button>
               </div>
             ))}
