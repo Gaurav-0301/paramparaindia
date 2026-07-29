@@ -8,6 +8,7 @@ import {
 import axios from 'axios';
 import { useFestival } from '../context/FestivalContext';
 import { useCatalog } from '../context/CatalogContext';
+import { getImageUrl, DEFAULT_CATEGORY_IMAGE } from '../utils/imageUrl';
 
 const AdminDashboardPage = () => {
   const { refetchFestival } = useFestival();
@@ -1007,7 +1008,12 @@ const AdminDashboardPage = () => {
                     </span>
                   )}
                   <div className="aspect-video rounded-xl overflow-hidden bg-stone-100 mb-3 border border-[#EFE6D8]">
-                    <img src={fest.bannerImage} alt={fest.title} className="w-full h-full object-cover" />
+                    <img
+                      src={getImageUrl(fest.bannerImage, DEFAULT_CATEGORY_IMAGE)}
+                      alt={fest.title}
+                      onError={(e) => { e.target.src = DEFAULT_CATEGORY_IMAGE; }}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <div>
                     <h3 className="font-serif-display font-semibold text-base text-[#3A342E]">{fest.title}</h3>

@@ -96,13 +96,14 @@ const HomePage = () => {
                 <RakshaBandhanStamp className="w-16 h-16 sm:w-20 sm:h-20" />
               </div>
 
-              <div className="relative aspect-[4/3] sm:aspect-[4/4.5] rounded-xl sm:rounded-2xl overflow-hidden shadow-xl border-2 sm:border-3 border-[#FAF7F2] max-h-[380px] sm:max-h-[420px] mx-auto w-full max-w-md lg:max-w-none">
+              <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl border-2 sm:border-3 border-[#FAF7F2] w-full max-w-md lg:max-w-none mx-auto bg-stone-100/80 flex items-center justify-center min-h-[220px] sm:min-h-[300px] lg:min-h-[360px] max-h-[460px]">
                 <img
-                  src={festival.bannerImage}
+                  src={getImageUrl(festival.bannerImage, DEFAULT_CATEGORY_IMAGE)}
                   alt={festival.title}
-                  className="w-full h-full object-cover object-center"
+                  onError={(e) => { e.target.src = DEFAULT_CATEGORY_IMAGE; }}
+                  className="w-full h-full object-cover object-center transition-all duration-300"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#3A342E]/40 via-transparent to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#3A342E]/50 via-transparent to-transparent pointer-events-none"></div>
                 <div className="absolute bottom-2.5 left-2.5 right-2.5 sm:bottom-4 sm:left-4 sm:right-4 p-2.5 sm:p-3 glass-panel rounded-lg sm:rounded-xl border border-[#D4B896]/50 text-center">
                   <p className="font-serif-display text-[11px] sm:text-xs italic text-[#3A342E]">
                     "Every thread is woven with love, prayer, and Indian heritage."
@@ -134,11 +135,12 @@ const HomePage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 items-center">
             
-            <div className="md:col-span-5 aspect-[16/9] sm:aspect-[4/5] rounded-xl sm:rounded-2xl overflow-hidden max-h-[320px] sm:max-h-none">
+            <div className="md:col-span-5 aspect-[16/9] sm:aspect-[4/5] rounded-xl sm:rounded-2xl overflow-hidden max-h-[320px] sm:max-h-none border border-[#EFE6D8]">
               <img
-                src={festival.storyImage}
+                src={getImageUrl(festival.storyImage, DEFAULT_CATEGORY_IMAGE)}
                 alt="Story Illustration"
-                className="w-full h-full object-cover"
+                onError={(e) => { e.target.src = DEFAULT_CATEGORY_IMAGE; }}
+                className="w-full h-full object-cover object-center"
               />
             </div>
 
