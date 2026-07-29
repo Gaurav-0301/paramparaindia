@@ -261,14 +261,65 @@ const AdminDashboardPage = () => {
     });
   };
 
+const compressImageFile = (file) => {
+  return new Promise((resolve) => {
+    if (!file || file.type === 'image/svg+xml' || file.size < 400 * 1024) {
+      return resolve(file);
+    }
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+      const MAX_SIZE = 1600;
+
+      if (width > MAX_SIZE || height > MAX_SIZE) {
+        if (width > height) {
+          height = Math.round((height * MAX_SIZE) / width);
+          width = MAX_SIZE;
+        } else {
+          width = Math.round((width * MAX_SIZE) / height);
+          height = MAX_SIZE;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) return resolve(file);
+          const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".webp", {
+            type: "image/webp",
+            lastModified: Date.now()
+          });
+          resolve(compressedFile);
+        },
+        'image/webp',
+        0.85
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(file);
+    };
+    img.src = url;
+  });
+};
+
   // Upload file from File Manager (Device Storage) with instant local preview
   const handleFileUpload = async (e, targetIndex = null) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
+    const rawFiles = Array.from(e.target.files || []);
+    if (rawFiles.length === 0) return;
 
     setUploadingImage(true);
 
     try {
+      const files = await Promise.all(rawFiles.map(f => compressImageFile(f)));
       if (files.length === 1) {
         const formData = new FormData();
         formData.append('image', files[0]);
@@ -330,12 +381,13 @@ const AdminDashboardPage = () => {
   };
 
   const handleCategoryFileUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const rawFile = e.target.files?.[0];
+    if (!rawFile) return;
 
     setUploadingImage(true);
 
     try {
+      const file = await compressImageFile(rawFile);
       const formData = new FormData();
       formData.append('image', file);
       const res = await axios.post('/api/upload', formData, {
@@ -350,7 +402,7 @@ const AdminDashboardPage = () => {
       reader.onload = (event) => {
         setCategoryForm(prev => ({ ...prev, image: event.target.result }));
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(rawFile);
     } finally {
       if (e.target) e.target.value = '';
       setUploadingImage(false);
@@ -516,12 +568,13 @@ const AdminDashboardPage = () => {
   };
 
   const handleFestivalBannerFileUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const rawFile = e.target.files?.[0];
+    if (!rawFile) return;
 
     setUploadingImage(true);
 
     try {
+      const file = await compressImageFile(rawFile);
       const formData = new FormData();
       formData.append('image', file);
       const res = await axios.post('/api/upload', formData, {
@@ -536,7 +589,7 @@ const AdminDashboardPage = () => {
       reader.onload = (ev) => {
         setFestivalForm(prev => ({ ...prev, bannerImage: ev.target.result }));
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(rawFile);
     } finally {
       if (e.target) e.target.value = '';
       setUploadingImage(false);
@@ -544,12 +597,13 @@ const AdminDashboardPage = () => {
   };
 
   const handleFestivalStoryFileUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const rawFile = e.target.files?.[0];
+    if (!rawFile) return;
 
     setUploadingImage(true);
 
     try {
+      const file = await compressImageFile(rawFile);
       const formData = new FormData();
       formData.append('image', file);
       const res = await axios.post('/api/upload', formData, {
@@ -564,7 +618,7 @@ const AdminDashboardPage = () => {
       reader.onload = (ev) => {
         setFestivalForm(prev => ({ ...prev, storyImage: ev.target.result }));
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(rawFile);
     } finally {
       if (e.target) e.target.value = '';
       setUploadingImage(false);

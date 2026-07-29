@@ -16,29 +16,22 @@ const seedDB = async () => {
     await mongoose.connect(mongoUri);
     console.log('Connected to MongoDB for Seeding...');
 
-    // Seed Categories if empty or incomplete
-    for (const catData of seedCategories) {
-      await Category.findOneAndUpdate(
-        { slug: catData.slug },
-        { $setOnInsert: catData },
-        { upsert: true, returnDocument: 'after' }
-      );
+    // Seed Categories ONLY if collection is completely empty to preserve user edits
+    const categoryCount = await Category.countDocuments();
+    if (categoryCount === 0) {
+      await Category.insertMany(seedCategories);
+      console.log(`Successfully seeded all ${seedCategories.length} default Rakhi Subcategories!`);
+    } else {
+      console.log(`Categories collection already has ${categoryCount} subcategories. Preserving user data.`);
     }
-    console.log(`Successfully verified/seeded all ${seedCategories.length} Rakhi Subcategories!`);
 
-    // Seed products if empty
+    // Seed products ONLY if collection is completely empty to preserve user edits
     const productCount = await Product.countDocuments();
     if (productCount === 0) {
       await Product.insertMany(seedProducts);
-      console.log('Successfully seeded soft-luxury festival products!');
+      console.log('Successfully seeded default festival products!');
     } else {
-      // Upsert seed products to ensure subcategory coverage
-      for (const prodData of seedProducts) {
-        const existing = await Product.findOne({ slug: prodData.slug });
-        if (!existing) {
-          await Product.create(prodData);
-        }
-      }
+      console.log(`Products collection already has ${productCount} products. Preserving user data.`);
     }
 
     // Seed coupons if empty

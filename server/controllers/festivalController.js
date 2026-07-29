@@ -74,12 +74,20 @@ const getActiveFestival = async (req, res) => {
   try {
     let active = await FestivalConfig.findOne({ isActive: true });
     if (!active) {
-      for (const key of Object.keys(FESTIVAL_PRESETS)) {
-        await FestivalConfig.findOneAndUpdate(
-          { festivalKey: key },
-          FESTIVAL_PRESETS[key],
-          { upsert: true, returnDocument: 'after' }
-        );
+      const festivalCount = await FestivalConfig.countDocuments();
+      if (festivalCount === 0) {
+        for (const key of Object.keys(FESTIVAL_PRESETS)) {
+          await FestivalConfig.create({
+            ...FESTIVAL_PRESETS[key],
+            isActive: key === 'raksha-bandhan'
+          });
+        }
+      } else {
+        active = await FestivalConfig.findOne();
+        if (active) {
+          active.isActive = true;
+          await active.save();
+        }
       }
       active = await FestivalConfig.findOne({ isActive: true });
     }
@@ -92,10 +100,13 @@ const getActiveFestival = async (req, res) => {
 // @desc Get all festival themes (Admin)
 const getAllFestivals = async (req, res) => {
   try {
-    for (const key of Object.keys(FESTIVAL_PRESETS)) {
-      const exists = await FestivalConfig.findOne({ festivalKey: key });
-      if (!exists) {
-        await FestivalConfig.create(FESTIVAL_PRESETS[key]);
+    const festivalCount = await FestivalConfig.countDocuments();
+    if (festivalCount === 0) {
+      for (const key of Object.keys(FESTIVAL_PRESETS)) {
+        await FestivalConfig.create({
+          ...FESTIVAL_PRESETS[key],
+          isActive: key === 'raksha-bandhan'
+        });
       }
     }
     const festivals = await FestivalConfig.find().sort({ createdAt: -1 });
@@ -105,7 +116,7 @@ const getAllFestivals = async (req, res) => {
   }
 };
 
-// @desc Switch or update festival config (Admin)
+// @desc Switch active festival config (Admin)
 const switchActiveFestival = async (req, res) => {
   try {
     const { festivalKey } = req.body;
@@ -113,33 +124,22 @@ const switchActiveFestival = async (req, res) => {
       return res.status(400).json({ message: 'festivalKey is required' });
     }
     
-    // Deactivate all themes
-    await FestivalConfig.updateMany({}, { isActive: false });
-
-    // Check if preset exists in DB or fallback dictionary
+    // Check if target exists in DB
     let target = await FestivalConfig.findOne({ festivalKey });
-    const presetData = FESTIVAL_PRESETS[festivalKey] || FESTIVAL_PRESETS['raksha-bandhan'];
 
     if (!target) {
+      const presetData = FESTIVAL_PRESETS[festivalKey] || FESTIVAL_PRESETS['raksha-bandhan'];
       target = new FestivalConfig({
         ...presetData,
-        ...req.body,
         festivalKey,
         isActive: true
       });
-    } else {
-      target.isActive = true;
-      if (req.body.title) target.title = req.body.title;
-      if (req.body.tagline) target.tagline = req.body.tagline;
-      if (req.body.heroHeadline) target.heroHeadline = req.body.heroHeadline;
-      if (req.body.heroSubheadline) target.heroSubheadline = req.body.heroSubheadline;
-      if (req.body.storyTitle) target.storyTitle = req.body.storyTitle;
-      if (req.body.storyNarrative) target.storyNarrative = req.body.storyNarrative;
-      if (req.body.bannerImage) target.bannerImage = req.body.bannerImage;
-      if (req.body.storyImage) target.storyImage = req.body.storyImage;
-      if (req.body.countdownTargetDate) target.countdownTargetDate = req.body.countdownTargetDate;
     }
 
+    // Deactivate all themes
+    await FestivalConfig.updateMany({}, { isActive: false });
+
+    target.isActive = true;
     await target.save();
 
     console.log(`[FESTIVAL ENGINE] Successfully activated festival theme: "${target.title}" (${target.festivalKey})`);
