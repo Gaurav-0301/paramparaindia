@@ -17,7 +17,7 @@ import { useCatalog } from '../context/CatalogContext';
 const HomePage = () => {
   const navigate = useNavigate();
   const { festival } = useFestival();
-  const { products: catalogProducts, categories: catalogCategories } = useCatalog();
+  const { products: catalogProducts, categories: catalogCategories, loadingProducts } = useCatalog();
   const [instaModalOpen, setInstaModalOpen] = useState(false);
 
   const featuredProducts = catalogProducts && catalogProducts.length > 0 ? catalogProducts.slice(0, 6) : [];
