@@ -243,12 +243,38 @@ const AdminDashboardPage = () => {
     });
   };
 
-  // Upload file from File Manager (Device Storage)
+  // Upload file from File Manager (Device Storage) with instant local preview
   const handleFileUpload = async (e, targetIndex = null) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
     setUploadingImage(true);
+
+    // Step 1: Instant local Base64 rendering so user immediately sees image preview
+    files.forEach((file, index) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target.result;
+        setProductForm(prev => {
+          let updated = [...prev.images];
+          if (targetIndex !== null) {
+            updated[targetIndex] = dataUrl;
+          } else {
+            // Replace initial empty/placeholder image if present
+            const placeholderIdx = updated.findIndex(img => !img || img.trim() === '' || img.includes('unsplash.com'));
+            if (placeholderIdx !== -1 && index === 0) {
+              updated[placeholderIdx] = dataUrl;
+            } else if (!updated.includes(dataUrl)) {
+              updated.push(dataUrl);
+            }
+          }
+          return { ...prev, images: updated.filter(Boolean) };
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Step 2: Upload to backend server to get clean /uploads/ URL
     try {
       if (files.length === 1) {
         const formData = new FormData();
@@ -256,19 +282,18 @@ const AdminDashboardPage = () => {
         const res = await axios.post('/api/upload', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
-        const uploadedUrl = res.data.imageUrl;
-
-        if (targetIndex !== null) {
+        if (res.data && res.data.imageUrl) {
+          const serverUrl = res.data.imageUrl;
           setProductForm(prev => {
-            const updated = [...prev.images];
-            updated[targetIndex] = uploadedUrl;
+            let updated = [...prev.images];
+            if (targetIndex !== null && targetIndex < updated.length) {
+              updated[targetIndex] = serverUrl;
+            } else {
+              const lastIdx = updated.length - 1;
+              if (lastIdx >= 0) updated[lastIdx] = serverUrl;
+            }
             return { ...prev, images: updated };
           });
-        } else {
-          setProductForm(prev => ({
-            ...prev,
-            images: [...prev.images.filter(img => img.trim() !== ''), uploadedUrl]
-          }));
         }
       } else {
         const formData = new FormData();
@@ -276,32 +301,15 @@ const AdminDashboardPage = () => {
         const res = await axios.post('/api/upload/multiple', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
-        const uploadedUrls = res.data.imageUrls || [];
-        setProductForm(prev => ({
-          ...prev,
-          images: [...prev.images.filter(img => img.trim() !== ''), ...uploadedUrls]
-        }));
-      }
-    } catch (err) {
-      console.warn('Backend multipart upload warning, falling back to Base64 FileReader:', err);
-      const fileToRead = files[0];
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64Url = reader.result;
-        if (targetIndex !== null) {
-          setProductForm(prev => {
-            const updated = [...prev.images];
-            updated[targetIndex] = base64Url;
-            return { ...prev, images: updated };
-          });
-        } else {
+        if (res.data && res.data.imageUrls) {
           setProductForm(prev => ({
             ...prev,
-            images: [...prev.images.filter(img => img.trim() !== ''), base64Url]
+            images: res.data.imageUrls
           }));
         }
-      };
-      reader.readAsDataURL(fileToRead);
+      }
+    } catch (err) {
+      console.log('Server upload fallback active:', err);
     } finally {
       if (e.target) e.target.value = '';
       setUploadingImage(false);
@@ -313,19 +321,25 @@ const AdminDashboardPage = () => {
     if (!file) return;
 
     setUploadingImage(true);
+
+    // Instant local preview
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setCategoryForm(prev => ({ ...prev, image: event.target.result }));
+    };
+    reader.readAsDataURL(file);
+
     try {
       const formData = new FormData();
       formData.append('image', file);
       const res = await axios.post('/api/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      setCategoryForm(prev => ({ ...prev, image: res.data.imageUrl }));
+      if (res.data && res.data.imageUrl) {
+        setCategoryForm(prev => ({ ...prev, image: res.data.imageUrl }));
+      }
     } catch (err) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setCategoryForm(prev => ({ ...prev, image: reader.result }));
-      };
-      reader.readAsDataURL(file);
+      console.log('Category upload fallback active:', err);
     } finally {
       if (e.target) e.target.value = '';
       setUploadingImage(false);
@@ -899,36 +913,33 @@ const AdminDashboardPage = () => {
                 />
               </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block font-semibold">Circle Image URL / File</label>
-                  <label
-                    htmlFor="cat-file-upload-input"
-                    className="cursor-pointer text-[10px] font-semibold bg-[#3A342E] text-white hover:bg-[#9CAF97] px-2 py-0.5 rounded transition-all"
-                  >
-                    📁 Choose Image File
-                  </label>
+              <div className="space-y-2 p-3 bg-[#FAF7F2] rounded-xl border border-[#D4B896]/50">
+                <label className="block font-bold text-[#3A342E]">Circle Avatar Image *</label>
+                
+                {/* Native Device File Manager Picker */}
+                <div className="bg-white p-2 rounded-lg border border-[#D4B896]/40 space-y-1">
+                  <span className="block text-[10px] font-semibold text-[#3A342E]">📁 Select Image From File Manager:</span>
                   <input
-                    id="cat-file-upload-input"
                     type="file"
                     accept="image/*"
                     onChange={handleCategoryFileUpload}
-                    className="hidden"
+                    className="block w-full text-[11px] text-[#3A342E] file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:font-semibold file:bg-[#3A342E] file:text-white hover:file:bg-[#9CAF97] cursor-pointer"
                   />
                 </div>
-                <div className="flex items-center gap-2">
+
+                <div className="flex items-center gap-2 pt-1">
                   {categoryForm.image && (
-                    <div className="w-9 h-9 rounded-full overflow-hidden border border-[#D4B896] shrink-0 bg-stone-100">
+                    <div className="w-9 h-9 rounded-full overflow-hidden border border-[#D4B896] shrink-0 bg-stone-100 shadow-2xs">
                       <img src={categoryForm.image} alt="" className="w-full h-full object-cover" />
                     </div>
                   )}
                   <input
                     type="text"
                     required
-                    placeholder="Image URL or File Path"
+                    placeholder="Image URL or Base64 Data"
                     value={categoryForm.image}
                     onChange={(e) => setCategoryForm({ ...categoryForm, image: e.target.value })}
-                    className="flex-1 p-2.5 rounded-lg border border-[#D4B896]/50 bg-white font-mono"
+                    className="flex-1 p-2 rounded-lg border border-[#D4B896]/50 bg-white font-mono text-[11px]"
                   />
                 </div>
               </div>
@@ -1087,42 +1098,36 @@ const AdminDashboardPage = () => {
               </div>
 
               {/* Product Images Section */}
-              <div className="p-3.5 bg-[#FAF7F2] rounded-xl border border-[#D4B896]/50 space-y-2.5">
+              <div className="p-3.5 bg-[#FAF7F2] rounded-xl border border-[#D4B896]/50 space-y-3">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <label className="block font-bold text-[#3A342E] flex items-center gap-1.5">
                     <ImageIcon className="w-4 h-4 text-[#D4B896]" /> Product Images *
                   </label>
                   
-                  <div className="flex items-center gap-2">
-                    {/* File Manager Upload Button */}
-                    <label
-                      htmlFor="product-file-upload-main"
-                      className="cursor-pointer text-[11px] font-semibold bg-[#3A342E] text-white hover:bg-[#9CAF97] px-2.5 py-1 rounded-md transition-all flex items-center gap-1 shadow-2xs"
-                    >
-                      📁 Upload From File Manager
-                    </label>
-                    <input
-                      id="product-file-upload-main"
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={(e) => handleFileUpload(e)}
-                      className="hidden"
-                    />
+                  <button
+                    type="button"
+                    onClick={handleAddImageInput}
+                    className="text-[11px] font-semibold text-[#9CAF97] hover:text-[#3A342E] flex items-center gap-1 bg-white px-2 py-1 rounded-md border border-[#D4B896]/40"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add URL Row
+                  </button>
+                </div>
 
-                    <button
-                      type="button"
-                      onClick={handleAddImageInput}
-                      className="text-[11px] font-semibold text-[#9CAF97] hover:text-[#3A342E] flex items-center gap-1 bg-white px-2 py-1 rounded-md border border-[#D4B896]/40"
-                    >
-                      <Plus className="w-3.5 h-3.5" /> Add URL
-                    </button>
-                  </div>
+                {/* Visible Fail-Proof Device File Manager Picker */}
+                <div className="bg-white p-2.5 rounded-xl border border-[#D4B896]/50 space-y-1">
+                  <span className="block text-[11px] font-bold text-[#3A342E]">📁 Select Image File(s) From Device / File Manager:</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => handleFileUpload(e)}
+                    className="block w-full text-xs text-[#3A342E] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#3A342E] file:text-[#FAF7F2] hover:file:bg-[#9CAF97] cursor-pointer"
+                  />
                 </div>
 
                 {uploadingImage && (
                   <p className="text-[11px] font-semibold text-[#9CAF97] animate-pulse">
-                    Uploading image file(s) from device... Please wait.
+                    Processing image file(s)... Please wait.
                   </p>
                 )}
 
