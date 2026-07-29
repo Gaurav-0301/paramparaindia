@@ -26,16 +26,38 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Memory Storage for zero disk-lag uploads
+// Helper: Map MIME type to extension
+const mimeToExt = (mimeType) => {
+  if (!mimeType) return '.jpg';
+  const lower = mimeType.toLowerCase();
+  if (lower.includes('webp')) return '.webp';
+  if (lower.includes('png')) return '.png';
+  if (lower.includes('jpeg') || lower.includes('jpg')) return '.jpg';
+  if (lower.includes('gif')) return '.gif';
+  if (lower.includes('svg')) return '.svg';
+  if (lower.includes('avif')) return '.avif';
+  if (lower.includes('heic') || lower.includes('heif')) return '.heic';
+  if (lower.includes('bmp')) return '.bmp';
+  if (lower.includes('tiff')) return '.tiff';
+  return '.jpg';
+};
+
+// Memory Storage for zero disk-lag uploads accepting all image types
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
-  limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit to handle high-res camera images (HEIC, RAW, AVIF, PNG)
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit to handle high-res images
+  fileFilter: (req, file, cb) => {
+    cb(null, true); // Allow 100% of all image formats (WebP, PNG, JPG, GIF, SVG, AVIF, HEIC, etc.)
+  }
 });
 
-// Helper: Stream buffer to Cloudinary with auto compression
-const processImageBuffer = async (buffer, originalname) => {
-  const ext = path.extname(originalname || '.jpg').toLowerCase() || '.jpg';
+// Helper: Stream buffer to Cloudinary with auto compression & local fallback
+const processImageBuffer = async (buffer, originalname, mimeType = null) => {
+  let ext = path.extname(originalname || '').toLowerCase();
+  if (!ext || ext === '') {
+    ext = mimeToExt(mimeType);
+  }
   const filename = `img-${Date.now()}-${Math.round(Math.random() * 1E6)}${ext}`;
   const localFilePath = path.join(uploadDir, filename);
 
@@ -51,6 +73,7 @@ const processImageBuffer = async (buffer, originalname) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
         folder: 'parampara_catalog',
+        resource_type: 'auto',
         transformation: [{ width: 1200, crop: 'limit', quality: 'auto', fetch_format: 'auto' }]
       },
       (error, result) => {
@@ -65,7 +88,7 @@ const processImageBuffer = async (buffer, originalname) => {
   });
 };
 
-// @desc    Upload single image
+// @desc    Upload single image (Supports WebP, PNG, JPG, GIF, SVG, AVIF, HEIC)
 // @route   POST /api/upload
 router.post('/', upload.single('image'), async (req, res) => {
   try {
@@ -73,7 +96,7 @@ router.post('/', upload.single('image'), async (req, res) => {
       return res.status(400).json({ success: false, message: 'No image file uploaded' });
     }
 
-    const imageUrl = await processImageBuffer(req.file.buffer, req.file.originalname);
+    const imageUrl = await processImageBuffer(req.file.buffer, req.file.originalname, req.file.mimetype);
     res.json({
       success: true,
       message: 'Image processed successfully',
@@ -94,7 +117,7 @@ router.post('/multiple', upload.array('images', 10), async (req, res) => {
 
     const imageUrls = [];
     for (const file of req.files) {
-      const url = await processImageBuffer(file.buffer, file.originalname);
+      const url = await processImageBuffer(file.buffer, file.originalname, file.mimetype);
       imageUrls.push(url);
     }
 
@@ -108,7 +131,7 @@ router.post('/multiple', upload.array('images', 10), async (req, res) => {
   }
 });
 
-// @desc    Upload Base64 image payload
+// @desc    Upload Base64 image payload (Supports WebP data URLs)
 // @route   POST /api/upload/base64
 router.post('/base64', async (req, res) => {
   try {
@@ -117,13 +140,15 @@ router.post('/base64', async (req, res) => {
       return res.status(400).json({ success: false, message: 'No base64 data provided' });
     }
 
-    const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    const matches = base64Data.match(/^data:([^;]+);base64,(.+)$/i);
     if (!matches || matches.length !== 3) {
       return res.json({ success: true, imageUrl: base64Data });
     }
 
+    const mimeType = matches[1];
     const buffer = Buffer.from(matches[2], 'base64');
-    const imageUrl = await processImageBuffer(buffer, 'upload.jpg');
+    const ext = mimeToExt(mimeType);
+    const imageUrl = await processImageBuffer(buffer, `upload${ext}`, mimeType);
 
     res.json({
       success: true,

@@ -72,6 +72,21 @@ const AdminDashboardPage = () => {
   // Festival config state
   const [festivals, setFestivals] = useState([]);
   const [selectedFestivalKey, setSelectedFestivalKey] = useState('raksha-bandhan');
+  const [showFestivalModal, setShowFestivalModal] = useState(false);
+  const [editingFestival, setEditingFestival] = useState(null);
+  const [festivalForm, setFestivalForm] = useState({
+    festivalKey: 'raksha-bandhan',
+    title: '',
+    tagline: '',
+    heroHeadline: '',
+    heroSubheadline: '',
+    storyTitle: '',
+    storyNarrative: '',
+    bannerImage: '',
+    storyImage: '',
+    countdownTargetDate: '',
+    makeActive: false
+  });
 
   useEffect(() => {
     fetchAnalytics();
@@ -445,6 +460,114 @@ const AdminDashboardPage = () => {
       fetchCoupons();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to create coupon');
+    }
+  };
+
+  // Festival Theme Actions
+  const handleOpenFestivalModal = (fest = null) => {
+    if (fest) {
+      setEditingFestival(fest);
+      let formattedDate = '';
+      if (fest.countdownTargetDate) {
+        const d = new Date(fest.countdownTargetDate);
+        formattedDate = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+      }
+      setFestivalForm({
+        festivalKey: fest.festivalKey || 'custom-theme',
+        title: fest.title || '',
+        tagline: fest.tagline || '',
+        heroHeadline: fest.heroHeadline || '',
+        heroSubheadline: fest.heroSubheadline || '',
+        storyTitle: fest.storyTitle || '',
+        storyNarrative: fest.storyNarrative || '',
+        bannerImage: fest.bannerImage || '',
+        storyImage: fest.storyImage || '',
+        countdownTargetDate: formattedDate,
+        makeActive: fest.isActive || false
+      });
+    } else {
+      setEditingFestival(null);
+      const defaultDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      const formattedDate = new Date(defaultDate.getTime() - defaultDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+      setFestivalForm({
+        festivalKey: `theme-${Date.now()}`,
+        title: '',
+        tagline: 'Festive Luxury & Heritage',
+        heroHeadline: 'Celebrate Indian Tradition with Pure Soft Luxury',
+        heroSubheadline: 'Handcrafted thalis, artisanal sweets, and authentic keepsake gifts delivered across India.',
+        storyTitle: 'The Sentiment & Story',
+        storyNarrative: 'Every thread and sweet box is crafted with devotion to honor timeless Indian heritage...',
+        bannerImage: 'https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?w=1600&auto=format&fit=crop&q=80',
+        storyImage: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=1000&auto=format&fit=crop&q=80',
+        countdownTargetDate: formattedDate,
+        makeActive: false
+      });
+    }
+    setShowFestivalModal(true);
+  };
+
+  const handleSaveFestivalTheme = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axios.post('/api/festival/admin/update', festivalForm);
+      if (res.data.success) {
+        setShowFestivalModal(false);
+        setEditingFestival(null);
+        fetchFestivals();
+        refetchFestival();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to save festival theme');
+    }
+  };
+
+  const handleFestivalBannerFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setFestivalForm(prev => ({ ...prev, bannerImage: ev.target.result }));
+    };
+    reader.readAsDataURL(file);
+
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await axios.post('/api/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data && res.data.imageUrl) {
+        setFestivalForm(prev => ({ ...prev, bannerImage: res.data.imageUrl }));
+      }
+    } catch (err) {
+      console.log('Banner upload fallback active:', err);
+    } finally {
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  const handleFestivalStoryFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setFestivalForm(prev => ({ ...prev, storyImage: ev.target.result }));
+    };
+    reader.readAsDataURL(file);
+
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await axios.post('/api/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data && res.data.imageUrl) {
+        setFestivalForm(prev => ({ ...prev, storyImage: res.data.imageUrl }));
+      }
+    } catch (err) {
+      console.log('Story image upload fallback active:', err);
+    } finally {
+      if (e.target) e.target.value = '';
     }
   };
 
@@ -842,21 +965,29 @@ const AdminDashboardPage = () => {
       {/* 7. Multi-Festival Engine Tab */}
       {activeTab === 'festival' && (
         <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-[#D4B896]/40 space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="font-serif-display text-xl font-semibold text-[#3A342E] flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-[#D4B896]" /> Dynamic Multi-Festival Theme Engine
               </h2>
               <p className="text-xs text-[#3A342E]/70 mt-1">
-                Instantly switch paramparaindia.shop for Raksha Bandhan, Diwali, Karwa Chauth, Bhai Dooj, or Holi.
+                Instantly customize and switch live website themes, headlines, hero banners, narratives, and timers.
               </p>
             </div>
-            <button
-              onClick={fetchFestivals}
-              className="px-3 py-1.5 bg-white border border-[#D4B896]/50 rounded-xl text-xs font-semibold text-[#3A342E] flex items-center gap-1.5 hover:bg-[#FAF7F2]"
-            >
-              <RefreshCw className="w-3.5 h-3.5 text-[#9CAF97]" /> Refresh Themes
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleOpenFestivalModal(null)}
+                className="px-4 py-2 bg-[#3A342E] text-[#FAF7F2] rounded-xl text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 hover:bg-[#9CAF97] transition-all shadow-xs"
+              >
+                <Plus className="w-4 h-4" /> Create Custom Theme
+              </button>
+              <button
+                onClick={fetchFestivals}
+                className="px-3 py-2 bg-white border border-[#D4B896]/50 rounded-xl text-xs font-semibold text-[#3A342E] flex items-center gap-1.5 hover:bg-[#FAF7F2]"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-[#9CAF97]" /> Refresh Themes
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -867,31 +998,43 @@ const AdminDashboardPage = () => {
                   fest.isActive
                     ? 'bg-white border-[#9CAF97] ring-2 ring-[#9CAF97]/50 shadow-md'
                     : 'bg-white/70 border-[#EFE6D8]'
-                } space-y-3 relative`}
+                } space-y-3 relative flex flex-col justify-between`}
               >
-                {fest.isActive && (
-                  <span className="absolute top-6 right-6 z-10 px-2.5 py-1 rounded-full bg-[#9CAF97] text-white text-[10px] uppercase font-bold tracking-wider shadow-sm flex items-center gap-1">
-                    <CheckCircle className="w-3 h-3" /> Active Live Theme
-                  </span>
-                )}
-                <div className="aspect-video rounded-xl overflow-hidden bg-stone-100">
-                  <img src={fest.bannerImage} alt={fest.title} className="w-full h-full object-cover" />
-                </div>
                 <div>
-                  <h3 className="font-serif-display font-semibold text-base text-[#3A342E]">{fest.title}</h3>
-                  <p className="text-xs text-[#3A342E]/70 line-clamp-1 mt-0.5">{fest.tagline}</p>
+                  {fest.isActive && (
+                    <span className="absolute top-6 right-6 z-10 px-2.5 py-1 rounded-full bg-[#9CAF97] text-white text-[10px] uppercase font-bold tracking-wider shadow-sm flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3" /> Active Live Theme
+                    </span>
+                  )}
+                  <div className="aspect-video rounded-xl overflow-hidden bg-stone-100 mb-3 border border-[#EFE6D8]">
+                    <img src={fest.bannerImage} alt={fest.title} className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <h3 className="font-serif-display font-semibold text-base text-[#3A342E]">{fest.title}</h3>
+                    <p className="text-xs font-semibold text-[#D4B896] mt-0.5 line-clamp-1">{fest.tagline}</p>
+                    <p className="text-[11px] text-[#3A342E]/70 line-clamp-2 mt-1 font-serif italic">"{fest.heroHeadline}"</p>
+                  </div>
                 </div>
-                <button
-                  onClick={() => handleSwitchFestival(fest.festivalKey)}
-                  disabled={fest.isActive}
-                  className={`w-full py-2.5 text-xs font-semibold uppercase tracking-wider rounded-xl transition-all ${
-                    fest.isActive
-                      ? 'bg-[#9CAF97]/20 text-[#9CAF97] cursor-default font-bold'
-                      : 'bg-[#3A342E] text-[#FAF7F2] hover:bg-[#9CAF97]'
-                  }`}
-                >
-                  {fest.isActive ? 'Active Theme' : 'Activate Theme'}
-                </button>
+
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#EFE6D8]">
+                  <button
+                    onClick={() => handleOpenFestivalModal(fest)}
+                    className="py-2 px-3 bg-white border border-[#D4B896]/60 text-[#3A342E] text-xs font-semibold uppercase rounded-xl hover:bg-[#FAF7F2] transition-colors flex items-center justify-center gap-1"
+                  >
+                    <Edit className="w-3.5 h-3.5 text-[#9CAF97]" /> Edit Theme
+                  </button>
+                  <button
+                    onClick={() => handleSwitchFestival(fest.festivalKey)}
+                    disabled={fest.isActive}
+                    className={`py-2 px-3 text-xs font-semibold uppercase tracking-wider rounded-xl transition-all ${
+                      fest.isActive
+                        ? 'bg-[#9CAF97]/20 text-[#9CAF97] cursor-default font-bold'
+                        : 'bg-[#3A342E] text-[#FAF7F2] hover:bg-[#9CAF97]'
+                    }`}
+                  >
+                    {fest.isActive ? 'Active' : 'Activate'}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -1320,6 +1463,214 @@ const AdminDashboardPage = () => {
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setShowCouponModal(false)} className="px-4 py-2 uppercase font-semibold">Cancel</button>
                 <button type="submit" className="px-6 py-2 bg-[#3A342E] text-white uppercase font-semibold rounded-lg">Create Coupon</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Festival Theme Editor Modal */}
+      {showFestivalModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div onClick={() => setShowFestivalModal(false)} className="absolute inset-0 bg-[#3A342E]/40 backdrop-blur-xs"></div>
+          <div className="relative w-full max-w-2xl glass-modal rounded-2xl p-6 sm:p-8 shadow-2xl border border-[#D4B896]/50 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[#EFE6D8] pb-3">
+              <h3 className="font-serif-display text-xl font-semibold text-[#3A342E] flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-[#D4B896]" />
+                {editingFestival ? `Edit Theme: ${editingFestival.title}` : 'Create Custom Festival Theme'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowFestivalModal(false)}
+                className="text-xs text-[#3A342E]/60 hover:text-[#3A342E] font-bold"
+              >
+                ✕ Close
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveFestivalTheme} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-semibold mb-1 text-[#3A342E]">Festival Title *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Raksha Bandhan, Diwali, Navratri"
+                    value={festivalForm.title}
+                    onChange={(e) => setFestivalForm({ ...festivalForm, title: e.target.value })}
+                    className="w-full p-2.5 rounded-lg border border-[#D4B896]/50 bg-white font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold mb-1 text-[#3A342E]">Theme Identifier Key *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. raksha-bandhan, diwali, holi"
+                    value={festivalForm.festivalKey}
+                    onChange={(e) => setFestivalForm({ ...festivalForm, festivalKey: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
+                    className="w-full p-2.5 rounded-lg border border-[#D4B896]/50 bg-white font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1 text-[#3A342E]">Campaign Tagline *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. A Sacred Thread of Eternal Bond & Love"
+                  value={festivalForm.tagline}
+                  onChange={(e) => setFestivalForm({ ...festivalForm, tagline: e.target.value })}
+                  className="w-full p-2.5 rounded-lg border border-[#D4B896]/50 bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1 text-[#3A342E]">Hero Section Headline *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Celebrate the Pure Sentiment of Sisterhood & Protection"
+                  value={festivalForm.heroHeadline}
+                  onChange={(e) => setFestivalForm({ ...festivalForm, heroHeadline: e.target.value })}
+                  className="w-full p-2.5 rounded-lg border border-[#D4B896]/50 bg-white font-serif font-semibold text-sm text-[#3A342E]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1 text-[#3A342E]">Hero Subheadline (Description Paragraph) *</label>
+                <textarea
+                  rows={2}
+                  required
+                  placeholder="e.g. Handcrafted premium Rakhis, curated mithai hampers, and timeless keepsakes..."
+                  value={festivalForm.heroSubheadline}
+                  onChange={(e) => setFestivalForm({ ...festivalForm, heroSubheadline: e.target.value })}
+                  className="w-full p-2.5 rounded-lg border border-[#D4B896]/50 bg-white"
+                />
+              </div>
+
+              {/* Banner Image Upload & Picker */}
+              <div className="space-y-2 p-3 bg-[#FAF7F2] rounded-xl border border-[#D4B896]/50">
+                <label className="block font-bold text-[#3A342E]">Main Hero Banner Image *</label>
+                <div className="bg-white p-2 rounded-lg border border-[#D4B896]/40 space-y-1">
+                  <span className="block text-[10px] font-semibold text-[#3A342E]">📁 Select Hero Banner From File Manager (WebP, PNG, JPG, etc.):</span>
+                  <input
+                    type="file"
+                    accept="image/*,.heic,.heif,.avif,.webp,.png,.jpg,.jpeg,.gif,.svg,.bmp"
+                    onChange={handleFestivalBannerFileUpload}
+                    className="block w-full text-[11px] text-[#3A342E] file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:font-semibold file:bg-[#3A342E] file:text-white hover:file:bg-[#9CAF97] cursor-pointer"
+                  />
+                </div>
+                <div className="flex items-center gap-3 pt-1">
+                  {festivalForm.bannerImage && (
+                    <div className="w-16 h-10 rounded-lg overflow-hidden border border-[#D4B896] shrink-0 bg-stone-100 shadow-2xs">
+                      <img src={festivalForm.bannerImage} alt="" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <input
+                    type="text"
+                    required
+                    placeholder="Image URL or Base64 Data"
+                    value={festivalForm.bannerImage}
+                    onChange={(e) => setFestivalForm({ ...festivalForm, bannerImage: e.target.value })}
+                    className="flex-1 p-2 rounded-lg border border-[#D4B896]/50 bg-white font-mono text-[11px]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-semibold mb-1 text-[#3A342E]">Story Section Title *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. The Story & Sacred Sentiment of Raksha Bandhan"
+                    value={festivalForm.storyTitle}
+                    onChange={(e) => setFestivalForm({ ...festivalForm, storyTitle: e.target.value })}
+                    className="w-full p-2.5 rounded-lg border border-[#D4B896]/50 bg-white font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold mb-1 text-[#3A342E]">Countdown Target Date & Time *</label>
+                  <input
+                    type="datetime-local"
+                    required
+                    value={festivalForm.countdownTargetDate}
+                    onChange={(e) => setFestivalForm({ ...festivalForm, countdownTargetDate: e.target.value })}
+                    className="w-full p-2.5 rounded-lg border border-[#D4B896]/50 bg-white font-semibold"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1 text-[#3A342E]">Story Narrative (Rich Storytelling) *</label>
+                <textarea
+                  rows={4}
+                  required
+                  placeholder="Full narrative text explaining the sacred significance..."
+                  value={festivalForm.storyNarrative}
+                  onChange={(e) => setFestivalForm({ ...festivalForm, storyNarrative: e.target.value })}
+                  className="w-full p-2.5 rounded-lg border border-[#D4B896]/50 bg-white"
+                />
+              </div>
+
+              {/* Story Image Upload & Picker */}
+              <div className="space-y-2 p-3 bg-[#FAF7F2] rounded-xl border border-[#D4B896]/50">
+                <label className="block font-bold text-[#3A342E]">Story Narrative Card Image *</label>
+                <div className="bg-white p-2 rounded-lg border border-[#D4B896]/40 space-y-1">
+                  <span className="block text-[10px] font-semibold text-[#3A342E]">📁 Select Story Image From File Manager (WebP, PNG, JPG, etc.):</span>
+                  <input
+                    type="file"
+                    accept="image/*,.heic,.heif,.avif,.webp,.png,.jpg,.jpeg,.gif,.svg,.bmp"
+                    onChange={handleFestivalStoryFileUpload}
+                    className="block w-full text-[11px] text-[#3A342E] file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:font-semibold file:bg-[#3A342E] file:text-white hover:file:bg-[#9CAF97] cursor-pointer"
+                  />
+                </div>
+                <div className="flex items-center gap-3 pt-1">
+                  {festivalForm.storyImage && (
+                    <div className="w-14 h-10 rounded-lg overflow-hidden border border-[#D4B896] shrink-0 bg-stone-100 shadow-2xs">
+                      <img src={festivalForm.storyImage} alt="" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <input
+                    type="text"
+                    required
+                    placeholder="Image URL or Base64 Data"
+                    value={festivalForm.storyImage}
+                    onChange={(e) => setFestivalForm({ ...festivalForm, storyImage: e.target.value })}
+                    className="flex-1 p-2 rounded-lg border border-[#D4B896]/50 bg-white font-mono text-[11px]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-xl border border-amber-200">
+                <input
+                  type="checkbox"
+                  id="makeActiveCheck"
+                  checked={festivalForm.makeActive}
+                  onChange={(e) => setFestivalForm({ ...festivalForm, makeActive: e.target.checked })}
+                  className="w-4 h-4 accent-[#9CAF97]"
+                />
+                <label htmlFor="makeActiveCheck" className="text-xs font-semibold text-[#3A342E] cursor-pointer">
+                  Activate as Live Storefront Theme Immediately
+                </label>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-[#EFE6D8]">
+                <button
+                  type="button"
+                  onClick={() => setShowFestivalModal(false)}
+                  className="px-4 py-2 uppercase font-semibold text-[#3A342E]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-[#3A342E] text-white uppercase font-semibold rounded-xl hover:bg-[#9CAF97] transition-all shadow-md"
+                >
+                  Save Theme Config
+                </button>
               </div>
             </form>
           </div>

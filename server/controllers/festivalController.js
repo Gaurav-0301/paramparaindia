@@ -154,8 +154,75 @@ const switchActiveFestival = async (req, res) => {
   }
 };
 
+// @desc Save or edit festival theme details (Admin)
+const updateFestivalTheme = async (req, res) => {
+  try {
+    const {
+      festivalKey,
+      title,
+      tagline,
+      heroHeadline,
+      heroSubheadline,
+      storyTitle,
+      storyNarrative,
+      bannerImage,
+      storyImage,
+      countdownTargetDate,
+      makeActive
+    } = req.body;
+
+    if (!festivalKey || !title) {
+      return res.status(400).json({ message: 'festivalKey and title are required' });
+    }
+
+    if (makeActive) {
+      await FestivalConfig.updateMany({}, { isActive: false });
+    }
+
+    let festival = await FestivalConfig.findOne({ festivalKey });
+
+    if (!festival) {
+      festival = new FestivalConfig({
+        festivalKey,
+        title,
+        tagline: tagline || '',
+        heroHeadline: heroHeadline || '',
+        heroSubheadline: heroSubheadline || '',
+        storyTitle: storyTitle || '',
+        storyNarrative: storyNarrative || '',
+        bannerImage: bannerImage || 'https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?w=1600&auto=format&fit=crop&q=80',
+        storyImage: storyImage || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=1000&auto=format&fit=crop&q=80',
+        countdownTargetDate: countdownTargetDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        isActive: makeActive !== undefined ? Boolean(makeActive) : false
+      });
+    } else {
+      if (title) festival.title = title;
+      if (tagline !== undefined) festival.tagline = tagline;
+      if (heroHeadline !== undefined) festival.heroHeadline = heroHeadline;
+      if (heroSubheadline !== undefined) festival.heroSubheadline = heroSubheadline;
+      if (storyTitle !== undefined) festival.storyTitle = storyTitle;
+      if (storyNarrative !== undefined) festival.storyNarrative = storyNarrative;
+      if (bannerImage !== undefined) festival.bannerImage = bannerImage;
+      if (storyImage !== undefined) festival.storyImage = storyImage;
+      if (countdownTargetDate !== undefined) festival.countdownTargetDate = countdownTargetDate;
+      if (makeActive) festival.isActive = true;
+    }
+
+    await festival.save();
+
+    res.status(200).json({
+      success: true,
+      festival,
+      message: `Theme "${festival.title}" saved successfully`
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getActiveFestival,
   getAllFestivals,
-  switchActiveFestival
+  switchActiveFestival,
+  updateFestivalTheme
 };
