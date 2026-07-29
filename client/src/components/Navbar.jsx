@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, User, Heart, Search, Menu, X, ShieldCheck, Crown } from 'lucide-react';
+import { ShoppingBag, User, Heart, Search, Menu, X, Crown } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -25,40 +25,43 @@ const Navbar = () => {
   return (
     <>
       {/* Announcement Bar */}
-      <div className="bg-[#3A342E] text-[#FAF7F2] text-[11px] font-medium tracking-widest uppercase py-1.5 px-4 text-center flex items-center justify-center gap-2">
-        <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#D4B896] animate-pulse"></span>
-        ✨ Raksha Bandhan Campaign Live • Free Doorstep Shipping on orders over ₹499
+      <div className="bg-[#3A342E] text-[#FAF7F2] text-[10px] sm:text-[11px] font-medium tracking-wider sm:tracking-widest uppercase py-1.5 px-3 text-center flex items-center justify-center gap-1.5 overflow-hidden text-ellipsis whitespace-nowrap">
+        <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#D4B896] animate-pulse shrink-0"></span>
+        <span className="truncate">✨ Raksha Bandhan Campaign Live • Free Doorstep Shipping over ₹499</span>
       </div>
 
-      {/* Sticky Solid Navbar */}
-      <header className="sticky top-0 z-40 w-full bg-[#FAF7F2] border-b border-[#D4B896]/30 shadow-xs transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-4">
+      {/* Sticky Mobile-Perfect Navbar */}
+      <header className="sticky top-0 z-40 w-full max-w-full bg-[#FAF7F2] border-b border-[#D4B896]/30 shadow-xs transition-all duration-300 overflow-x-clip">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
           
-          {/* Mobile menu trigger */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 text-[#3A342E] hover:text-[#9CAF97]"
-            aria-label="Toggle Menu"
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          {/* Left Controls: Mobile Menu Trigger & Logo */}
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+            {/* Mobile menu trigger */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-1.5 text-[#3A342E] hover:text-[#9CAF97] transition-colors"
+              aria-label="Toggle Menu"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
+            </button>
 
-          {/* Brand Logo & Name */}
-          <Link to="/" className="flex items-center gap-2.5 group py-1 shrink-0">
-            <img
-              src="/lotus-icon.png"
-              alt="Parampara India Lotus Emblem"
-              className="h-8 sm:h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
-            />
-            <div className="flex flex-col">
-              <span className="font-serif-display text-xl sm:text-2xl font-semibold tracking-widest text-[#3A342E] group-hover:text-[#9CAF97] transition-colors leading-none whitespace-nowrap">
-                PARAMPARA
-              </span>
-              <span className="text-[9px] uppercase tracking-[0.25em] text-[#D4B896] font-medium mt-0.5 whitespace-nowrap">
-                INDIA • FESTIVE LUXURY
-              </span>
-            </div>
-          </Link>
+            {/* Brand Logo & Name */}
+            <Link to="/" className="flex items-center gap-2 group py-1">
+              <img
+                src="/lotus-icon.png"
+                alt="Parampara India Lotus Emblem"
+                className="h-7 sm:h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="flex flex-col">
+                <span className="font-serif-display text-base sm:text-2xl font-semibold tracking-wider sm:tracking-widest text-[#3A342E] group-hover:text-[#9CAF97] transition-colors leading-none whitespace-nowrap">
+                  PARAMPARA
+                </span>
+                <span className="hidden xs:block text-[8px] sm:text-[9px] uppercase tracking-[0.2em] text-[#D4B896] font-medium mt-0.5 whitespace-nowrap">
+                  INDIA • FESTIVE LUXURY
+                </span>
+              </div>
+            </Link>
+          </div>
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-xs uppercase tracking-widest font-medium text-[#3A342E] whitespace-nowrap">
@@ -79,8 +82,8 @@ const Navbar = () => {
             </Link>
           </nav>
 
-          {/* Utility Action Icons */}
-          <div className="flex items-center gap-4 sm:gap-6 text-[#3A342E]">
+          {/* Utility Action Icons (Responsive Layout) */}
+          <div className="flex items-center gap-1.5 sm:gap-4 text-[#3A342E] shrink-0">
             {/* Search Toggle */}
             <div className="relative">
               <button
@@ -88,23 +91,23 @@ const Navbar = () => {
                 className="p-1.5 hover:text-[#9CAF97] transition-colors"
                 aria-label="Search"
               >
-                <Search className="w-5 h-5" />
+                <Search className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
 
               {searchOpen && (
                 <form
                   onSubmit={handleSearchSubmit}
-                  className="absolute right-0 top-10 w-72 glass-modal p-2 rounded-xl shadow-xl z-50 flex items-center border border-[#D4B896]/50"
+                  className="absolute right-[-40px] sm:right-0 top-10 w-[calc(100vw-3rem)] max-w-xs glass-modal p-2 rounded-xl shadow-xl z-50 flex items-center border border-[#D4B896]/50"
                 >
                   <input
                     type="text"
                     placeholder="Search Rakhis, Hampers..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs bg-transparent focus:outline-none text-[#3A342E]"
+                    className="w-full px-2.5 py-1 text-xs bg-transparent focus:outline-none text-[#3A342E]"
                     autoFocus
                   />
-                  <button type="submit" className="p-1.5 text-[#9CAF97] hover:text-[#3A342E]">
+                  <button type="submit" className="p-1 text-[#9CAF97] hover:text-[#3A342E]">
                     <Search className="w-4 h-4" />
                   </button>
                 </form>
@@ -113,34 +116,35 @@ const Navbar = () => {
 
             {/* Wishlist */}
             <Link to="/account?tab=wishlist" className="relative p-1.5 hover:text-[#E8D3CE] transition-colors">
-              <Heart className="w-5 h-5" />
+              <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
               {wishlistCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#E8D3CE] text-[#3A342E] text-[9px] font-bold flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-[#E8D3CE] text-[#3A342E] text-[8px] sm:text-[9px] font-bold flex items-center justify-center">
                   {wishlistCount}
                 </span>
               )}
             </Link>
 
-            {/* User Account / Admin Badge */}
+            {/* Admin Badge */}
             {isAdmin && (
-              <Link to="/admin" className="hidden sm:flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full bg-[#9CAF97]/20 text-[#3A342E] border border-[#9CAF97]">
+              <Link to="/admin" className="hidden md:flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#9CAF97]/20 text-[#3A342E] border border-[#9CAF97]">
                 <Crown className="w-3 h-3 text-[#D4B896]" /> Admin
               </Link>
             )}
 
+            {/* User Account */}
             <Link to={user ? "/account" : "/login"} className="p-1.5 hover:text-[#9CAF97] transition-colors">
-              <User className="w-5 h-5" />
+              <User className="w-4 h-4 sm:w-5 sm:h-5" />
             </Link>
 
             {/* Mini Cart Toggle */}
             <button
               onClick={() => setIsCartOpen(true)}
-              className="relative p-2 bg-[#3A342E] text-[#FAF7F2] rounded-full hover:bg-[#9CAF97] transition-colors shadow-sm"
+              className="relative p-1.5 sm:p-2 bg-[#3A342E] text-[#FAF7F2] rounded-full hover:bg-[#9CAF97] transition-colors shadow-sm shrink-0"
               aria-label="Cart"
             >
-              <ShoppingBag className="w-4 h-4" />
+              <ShoppingBag className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               {totalItemCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#D4B896] text-[#3A342E] text-[10px] font-bold flex items-center justify-center border-2 border-[#FAF7F2]">
+                <span className="absolute -top-1 -right-1 sm:-top-1.5 sm:-right-1.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-[#D4B896] text-[#3A342E] text-[8px] sm:text-[10px] font-bold flex items-center justify-center border-2 border-[#FAF7F2]">
                   {totalItemCount}
                 </span>
               )}
@@ -150,39 +154,39 @@ const Navbar = () => {
 
         {/* Mobile menu dropdown */}
         {mobileMenuOpen && (
-          <div className="lg:hidden glass-modal border-b border-[#D4B896]/30 px-6 py-6 space-y-4">
+          <div className="lg:hidden glass-modal border-b border-[#D4B896]/30 px-5 py-5 space-y-3.5 animate-fadeIn">
             <Link
               to="/"
               onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm uppercase tracking-widest font-medium text-[#3A342E] hover:text-[#9CAF97]"
+              className="block text-xs sm:text-sm uppercase tracking-widest font-semibold text-[#3A342E] hover:text-[#9CAF97]"
             >
               Home
             </Link>
             <Link
               to="/shop?category=Rakhis"
               onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm uppercase tracking-widest font-medium text-[#3A342E] hover:text-[#9CAF97]"
+              className="block text-xs sm:text-sm uppercase tracking-widest font-semibold text-[#3A342E] hover:text-[#9CAF97]"
             >
-              Rakhis
+              Rakhis Catalog
             </Link>
             <Link
               to="/shop?category=Sweets"
               onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm uppercase tracking-widest font-medium text-[#3A342E] hover:text-[#9CAF97]"
+              className="block text-xs sm:text-sm uppercase tracking-widest font-semibold text-[#3A342E] hover:text-[#9CAF97]"
             >
               Mithai & Sweets
             </Link>
             <Link
               to="/shop?category=Gifts"
               onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm uppercase tracking-widest font-medium text-[#3A342E] hover:text-[#9CAF97]"
+              className="block text-xs sm:text-sm uppercase tracking-widest font-semibold text-[#3A342E] hover:text-[#9CAF97]"
             >
               Luxury Hampers
             </Link>
             <Link
               to="/shop"
               onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm uppercase tracking-widest font-medium text-[#3A342E] hover:text-[#9CAF97]"
+              className="block text-xs sm:text-sm uppercase tracking-widest font-semibold text-[#3A342E] hover:text-[#9CAF97]"
             >
               All Collections
             </Link>
@@ -191,7 +195,7 @@ const Navbar = () => {
               <Link
                 to="/admin"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block text-sm uppercase tracking-widest font-bold text-[#9CAF97]"
+                className="block text-xs sm:text-sm uppercase tracking-widest font-bold text-[#9CAF97] pt-2 border-t border-[#D4B896]/30"
               >
                 👑 Admin Dashboard
               </Link>
