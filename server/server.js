@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
 const seedDB = require('./data/seeder');
@@ -15,20 +16,29 @@ connectDB().then(() => {
   seedDB();
 });
 
-// Middleware
-const allowedOrigins = process.env.CLIENT_URL 
-  ? [process.env.CLIENT_URL, 'http://localhost:3000', 'http://localhost:5173'] 
-  : '*';
+// Middleware - Robust CORS setup to prevent Access-Control-Allow-Origin wildcard error with credentials
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173'
+].filter(Boolean);
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
   credentials: true
 }));
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Serve static uploads directory
-const path = require('path');
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // API Routes
@@ -45,6 +55,11 @@ app.use('/api/upload', require('./routes/uploadRoutes'));
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Parampara India API Server Running' });
+});
+
+// 404 Fallback for unhandled API routes
+app.use('/api', (req, res) => {
+  res.status(404).json({ message: `API endpoint ${req.originalUrl} not found` });
 });
 
 // Error handling middleware
