@@ -1,4 +1,6 @@
 const Category = require('../models/Category');
+const Product = require('../models/Product');
+const { convertBase64ToUrl } = require('../utils/imageSanitizer');
 
 // @desc Get all categories/subcategories
 // @route GET /api/categories
@@ -62,11 +64,13 @@ const createCategory = async (req, res) => {
       return res.status(400).json({ message: 'A category with this name already exists' });
     }
 
+    const cleanedImage = convertBase64ToUrl(image);
+
     const category = new Category({
       name,
       slug,
       parentCategory: parentCategory || 'Rakhis',
-      image,
+      image: cleanedImage,
       description: description || '',
       displayOrder: displayOrder !== undefined ? Number(displayOrder) : 0,
       isActive: isActive !== undefined ? Boolean(isActive) : true
@@ -95,6 +99,10 @@ const updateCategory = async (req, res) => {
 
     if (updateData.name) {
       updateData.slug = updateData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    }
+
+    if (updateData.image) {
+      updateData.image = convertBase64ToUrl(updateData.image);
     }
 
     const category = await Category.findByIdAndUpdate(

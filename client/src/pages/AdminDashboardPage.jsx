@@ -268,31 +268,6 @@ const AdminDashboardPage = () => {
 
     setUploadingImage(true);
 
-    // Step 1: Instant local Base64 rendering so user immediately sees image preview
-    files.forEach((file, index) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const dataUrl = event.target.result;
-        setProductForm(prev => {
-          let updated = [...prev.images];
-          if (targetIndex !== null) {
-            updated[targetIndex] = dataUrl;
-          } else {
-            // Replace initial empty/placeholder image if present
-            const placeholderIdx = updated.findIndex(img => !img || img.trim() === '' || img.includes('unsplash.com'));
-            if (placeholderIdx !== -1 && index === 0) {
-              updated[placeholderIdx] = dataUrl;
-            } else if (!updated.includes(dataUrl)) {
-              updated.push(dataUrl);
-            }
-          }
-          return { ...prev, images: updated.filter(Boolean) };
-        });
-      };
-      reader.readAsDataURL(file);
-    });
-
-    // Step 2: Upload to backend server to get clean /uploads/ URL
     try {
       if (files.length === 1) {
         const formData = new FormData();
@@ -307,10 +282,14 @@ const AdminDashboardPage = () => {
             if (targetIndex !== null && targetIndex < updated.length) {
               updated[targetIndex] = serverUrl;
             } else {
-              const lastIdx = updated.length - 1;
-              if (lastIdx >= 0) updated[lastIdx] = serverUrl;
+              const placeholderIdx = updated.findIndex(img => !img || img.trim() === '' || img.includes('unsplash.com'));
+              if (placeholderIdx !== -1) {
+                updated[placeholderIdx] = serverUrl;
+              } else {
+                updated.push(serverUrl);
+              }
             }
-            return { ...prev, images: updated };
+            return { ...prev, images: updated.filter(Boolean) };
           });
         }
       } else {
@@ -327,7 +306,23 @@ const AdminDashboardPage = () => {
         }
       }
     } catch (err) {
-      console.log('Server upload fallback active:', err);
+      console.warn('Server upload fallback active:', err);
+      files.forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const dataUrl = event.target.result;
+          setProductForm(prev => {
+            let updated = [...prev.images];
+            if (targetIndex !== null) {
+              updated[targetIndex] = dataUrl;
+            } else {
+              updated.push(dataUrl);
+            }
+            return { ...prev, images: updated.filter(Boolean) };
+          });
+        };
+        reader.readAsDataURL(file);
+      });
     } finally {
       if (e.target) e.target.value = '';
       setUploadingImage(false);
@@ -340,13 +335,6 @@ const AdminDashboardPage = () => {
 
     setUploadingImage(true);
 
-    // Instant local preview
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setCategoryForm(prev => ({ ...prev, image: event.target.result }));
-    };
-    reader.readAsDataURL(file);
-
     try {
       const formData = new FormData();
       formData.append('image', file);
@@ -357,7 +345,12 @@ const AdminDashboardPage = () => {
         setCategoryForm(prev => ({ ...prev, image: res.data.imageUrl }));
       }
     } catch (err) {
-      console.log('Category upload fallback active:', err);
+      console.warn('Category upload fallback active:', err);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setCategoryForm(prev => ({ ...prev, image: event.target.result }));
+      };
+      reader.readAsDataURL(file);
     } finally {
       if (e.target) e.target.value = '';
       setUploadingImage(false);
@@ -525,11 +518,8 @@ const AdminDashboardPage = () => {
   const handleFestivalBannerFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setFestivalForm(prev => ({ ...prev, bannerImage: ev.target.result }));
-    };
-    reader.readAsDataURL(file);
+
+    setUploadingImage(true);
 
     try {
       const formData = new FormData();
@@ -541,20 +531,23 @@ const AdminDashboardPage = () => {
         setFestivalForm(prev => ({ ...prev, bannerImage: res.data.imageUrl }));
       }
     } catch (err) {
-      console.log('Banner upload fallback active:', err);
+      console.warn('Banner upload fallback active:', err);
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setFestivalForm(prev => ({ ...prev, bannerImage: ev.target.result }));
+      };
+      reader.readAsDataURL(file);
     } finally {
       if (e.target) e.target.value = '';
+      setUploadingImage(false);
     }
   };
 
   const handleFestivalStoryFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setFestivalForm(prev => ({ ...prev, storyImage: ev.target.result }));
-    };
-    reader.readAsDataURL(file);
+
+    setUploadingImage(true);
 
     try {
       const formData = new FormData();
@@ -566,9 +559,15 @@ const AdminDashboardPage = () => {
         setFestivalForm(prev => ({ ...prev, storyImage: res.data.imageUrl }));
       }
     } catch (err) {
-      console.log('Story image upload fallback active:', err);
+      console.warn('Story image upload fallback active:', err);
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setFestivalForm(prev => ({ ...prev, storyImage: ev.target.result }));
+      };
+      reader.readAsDataURL(file);
     } finally {
       if (e.target) e.target.value = '';
+      setUploadingImage(false);
     }
   };
 

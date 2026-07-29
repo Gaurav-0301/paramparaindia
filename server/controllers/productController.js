@@ -1,4 +1,5 @@
 const Product = require('../models/Product');
+const { sanitizeImages } = require('../utils/imageSanitizer');
 
 // @desc Get all products with filters & pagination
 // @route GET /api/products
@@ -99,6 +100,7 @@ const createProduct = async (req, res) => {
     } = req.body;
     
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
+    const cleanedImages = sanitizeImages(images && images.length ? images : ['https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?w=800&auto=format&fit=crop&q=80']);
 
     const product = new Product({
       name,
@@ -106,7 +108,7 @@ const createProduct = async (req, res) => {
       description,
       category,
       subCategory: subCategory || '',
-      images: images && images.length ? images : ['https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?w=800&auto=format&fit=crop&q=80'],
+      images: cleanedImages,
       price,
       mrp: mrp || price,
       availableQuantity: availableQuantity !== undefined ? availableQuantity : 50,
@@ -137,6 +139,10 @@ const updateProduct = async (req, res) => {
 
     if (updateData.name) {
       updateData.slug = updateData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    }
+
+    if (updateData.images) {
+      updateData.images = sanitizeImages(updateData.images);
     }
 
     const product = await Product.findByIdAndUpdate(

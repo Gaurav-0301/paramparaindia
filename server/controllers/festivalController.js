@@ -1,4 +1,5 @@
 const FestivalConfig = require('../models/FestivalConfig');
+const { convertBase64ToUrl } = require('../utils/imageSanitizer');
 
 const FESTIVAL_PRESETS = {
   'raksha-bandhan': {
@@ -181,6 +182,9 @@ const updateFestivalTheme = async (req, res) => {
 
     let festival = await FestivalConfig.findOne({ festivalKey });
 
+    const cleanedBanner = convertBase64ToUrl(bannerImage);
+    const cleanedStory = convertBase64ToUrl(storyImage);
+
     if (!festival) {
       festival = new FestivalConfig({
         festivalKey,
@@ -190,8 +194,8 @@ const updateFestivalTheme = async (req, res) => {
         heroSubheadline: heroSubheadline || '',
         storyTitle: storyTitle || '',
         storyNarrative: storyNarrative || '',
-        bannerImage: bannerImage || 'https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?w=1600&auto=format&fit=crop&q=80',
-        storyImage: storyImage || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=1000&auto=format&fit=crop&q=80',
+        bannerImage: cleanedBanner || 'https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?w=1600&auto=format&fit=crop&q=80',
+        storyImage: cleanedStory || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=1000&auto=format&fit=crop&q=80',
         countdownTargetDate: countdownTargetDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         isActive: makeActive !== undefined ? Boolean(makeActive) : false
       });
@@ -202,8 +206,8 @@ const updateFestivalTheme = async (req, res) => {
       if (heroSubheadline !== undefined) festival.heroSubheadline = heroSubheadline;
       if (storyTitle !== undefined) festival.storyTitle = storyTitle;
       if (storyNarrative !== undefined) festival.storyNarrative = storyNarrative;
-      if (bannerImage !== undefined) festival.bannerImage = bannerImage;
-      if (storyImage !== undefined) festival.storyImage = storyImage;
+      if (cleanedBanner) festival.bannerImage = cleanedBanner;
+      if (cleanedStory) festival.storyImage = cleanedStory;
       if (countdownTargetDate !== undefined) festival.countdownTargetDate = countdownTargetDate;
       if (makeActive) festival.isActive = true;
     }
