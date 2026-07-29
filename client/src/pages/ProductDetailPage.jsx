@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import ProductCard from '../components/ProductCard';
 import GoldThreadDivider from '../components/GoldThreadDivider';
+import { getImageUrl, DEFAULT_PRODUCT_IMAGE } from '../utils/imageUrl';
 import axios from 'axios';
 
 const ProductDetailPage = () => {
@@ -163,8 +164,9 @@ const ProductDetailPage = () => {
         <div className="lg:col-span-6 space-y-4">
           <div className="aspect-[4/5] rounded-3xl overflow-hidden bg-white border border-[#EFE6D8] shadow-sm relative group">
             <img
-              src={product.images[selectedImage] || product.images[0]}
+              src={getImageUrl(product.images[selectedImage] || product.images[0])}
               alt={product.name}
+              onError={(e) => { e.target.src = DEFAULT_PRODUCT_IMAGE; }}
               className="w-full h-full object-cover"
             />
             {product.badge && (
@@ -196,7 +198,12 @@ const ProductDetailPage = () => {
                     selectedImage === idx ? 'border-[#9CAF97] scale-95' : 'border-[#EFE6D8] opacity-70'
                   }`}
                 >
-                  <img src={img} alt="" className="w-full h-full object-cover" />
+                  <img
+                    src={getImageUrl(img)}
+                    alt=""
+                    onError={(e) => { e.target.src = DEFAULT_PRODUCT_IMAGE; }}
+                    className="w-full h-full object-cover"
+                  />
                 </button>
               ))}
             </div>

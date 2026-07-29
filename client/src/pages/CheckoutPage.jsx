@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ShieldCheck, MapPin, CreditCard, Truck, Plus, CheckCircle, AlertCircle } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { getImageUrl, DEFAULT_PRODUCT_IMAGE } from '../utils/imageUrl';
 import axios from 'axios';
 
 const CheckoutPage = () => {
@@ -270,7 +271,12 @@ const CheckoutPage = () => {
             <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
               {cartItems.map((item, idx) => (
                 <div key={item.product._id + (item.customText || '') + idx} className="flex items-center gap-3 text-xs">
-                  <img src={item.product.images[0]} alt="" className="w-12 h-12 object-cover rounded-lg bg-white" />
+                  <img
+                    src={getImageUrl(item.product?.images?.[0])}
+                    alt={item.product?.name || ''}
+                    onError={(e) => { e.target.src = DEFAULT_PRODUCT_IMAGE; }}
+                    className="w-12 h-12 object-cover rounded-lg bg-white"
+                  />
                   <div className="flex-1">
                     <p className="font-semibold text-[#3A342E] line-clamp-1">{item.product.name}</p>
                     {item.customText && (

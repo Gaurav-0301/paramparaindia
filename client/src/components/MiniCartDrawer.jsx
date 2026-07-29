@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { X, Plus, Minus, Trash2, Tag, ArrowRight, ShoppingBag } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { getImageUrl, DEFAULT_PRODUCT_IMAGE } from '../utils/imageUrl';
 
 const MiniCartDrawer = () => {
   const {
@@ -102,8 +103,9 @@ const MiniCartDrawer = () => {
               cartItems.map((item, idx) => (
                 <div key={item.product._id + (item.customText || '') + idx} className="flex gap-4 p-3 bg-white/60 rounded-xl border border-[#EFE6D8]">
                   <img
-                    src={item.product.images[0]}
+                    src={getImageUrl(item.product.images?.[0])}
                     alt={item.product.name}
+                    onError={(e) => { e.target.src = DEFAULT_PRODUCT_IMAGE; }}
                     className="w-20 h-24 object-cover rounded-lg bg-[#FAF7F2]"
                   />
                   <div className="flex-1 flex flex-col justify-between">

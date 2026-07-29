@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingBag, ArrowRight, Trash2, Plus, Minus, Tag } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import ProductCard from '../components/ProductCard';
+import { getImageUrl, DEFAULT_PRODUCT_IMAGE } from '../utils/imageUrl';
 import axios from 'axios';
 
 const CartPage = () => {
@@ -71,8 +72,9 @@ const CartPage = () => {
           {cartItems.map((item, idx) => (
             <div key={item.product._id + (item.customText || '') + idx} className="p-4 bg-white/70 rounded-2xl border border-[#EFE6D8] flex gap-4 items-center">
               <img
-                src={item.product.images[0]}
+                src={getImageUrl(item.product.images?.[0])}
                 alt={item.product.name}
+                onError={(e) => { e.target.src = DEFAULT_PRODUCT_IMAGE; }}
                 className="w-20 h-24 object-cover rounded-xl bg-[#FAF7F2]"
               />
               <div className="flex-1 space-y-1">
