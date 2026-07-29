@@ -43,13 +43,21 @@ const Navbar = () => {
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
 
-          {/* Brand Logo */}
-          <Link to="/" className="flex items-center gap-2 group py-1">
+          {/* Brand Logo & Name */}
+          <Link to="/" className="flex items-center gap-2.5 group py-1">
             <img
-              src="/logo.png"
-              alt="Parampara India Logo"
-              className="h-10 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+              src="/lotus-icon.png"
+              alt="Parampara India Lotus Emblem"
+              className="h-8 sm:h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
             />
+            <div className="flex flex-col">
+              <span className="font-serif-display text-xl sm:text-2xl font-semibold tracking-widest text-[#3A342E] group-hover:text-[#9CAF97] transition-colors leading-none">
+                PARAMPARA
+              </span>
+              <span className="text-[9px] uppercase tracking-[0.25em] text-[#D4B896] font-medium mt-0.5">
+                INDIA • FESTIVE LUXURY
+              </span>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}

@@ -47,12 +47,20 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 py-12">
           {/* Brand Info */}
           <div className="space-y-4">
-            <Link to="/" className="inline-block">
+            <Link to="/" className="flex items-center gap-2.5 group">
               <img
-                src="/logo.png"
-                alt="Parampara India Logo"
-                className="h-12 sm:h-14 w-auto object-contain bg-[#FAF7F2] p-1.5 rounded-xl shadow-md"
+                src="/lotus-icon.png"
+                alt="Parampara India Lotus Emblem"
+                className="h-10 w-auto object-contain bg-[#FAF7F2] p-1 rounded-lg shadow-md"
               />
+              <div className="flex flex-col">
+                <span className="font-serif-display text-2xl font-semibold tracking-widest text-[#FAF7F2]">
+                  PARAMPARA
+                </span>
+                <span className="text-[9px] uppercase tracking-[0.25em] text-[#D4B896] font-medium">
+                  INDIA • FESTIVE LUXURY
+                </span>
+              </div>
             </Link>
             <p className="text-xs text-[#FAF7F2]/70 leading-relaxed">
               Celebrating India's rich cultural heritage through soft-luxury handcrafted Rakhis, artisanal mithai, and timeless keepsake hampers.
