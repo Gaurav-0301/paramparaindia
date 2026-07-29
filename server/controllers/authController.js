@@ -1,5 +1,17 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const twilio = require('twilio');
+
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const twilioPhone = process.env.TWILIO_PHONE_NUMBER;
+
+let twilioClient = null;
+if (accountSid && authToken && accountSid.startsWith('AC')) {
+  try {
+    twilioClient = twilio(accountSid, authToken);
+  } catch (err) {
+    console.warn('[TWILIO WARNING] Could not initialize Twilio client:', err.message);
+  }
+}
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET || 'parampara_secret_key_2026_festive_luxury', {
@@ -10,42 +22,60 @@ const generateToken = (id) => {
 // @desc Send OTP to mobile number
 // @route POST /api/auth/send-otp
 const sendOTP = async (req, res) => {
-  const { mobile } = req.body;
+  const { mobile, name, email } = req.body;
   if (!mobile || mobile.length < 10) {
     return res.status(400).json({ message: 'Please provide a valid 10-digit mobile number' });
   }
 
   const cleanMobile = mobile.replace(/\D/g, '').slice(-10);
-  const dummyOTP = cleanMobile === '9999999999' ? '999999' : '123456'; // Default dev OTP
+  const isDevAdmin = cleanMobile === '9999999999';
+  const generatedOTP = isDevAdmin ? '999999' : Math.floor(100000 + Math.random() * 900000).toString();
   const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
 
   try {
     let user = await User.findOne({ mobile: cleanMobile });
     if (!user) {
-      // Auto-assign admin role to specific seed mobile number if requested
-      const role = cleanMobile === '9999999999' ? 'admin' : 'customer';
-      const name = role === 'admin' ? 'Parampara Admin' : 'Festive Shopper';
+      const role = isDevAdmin ? 'admin' : 'customer';
+      const userName = name || (role === 'admin' ? 'Parampara Admin' : 'Festive Shopper');
       user = new User({
         mobile: cleanMobile,
-        name,
+        name: userName,
+        email: email || '',
         role,
-        otp: dummyOTP,
+        otp: generatedOTP,
         otpExpires
       });
     } else {
-      user.otp = dummyOTP;
+      if (name) user.name = name;
+      if (email) user.email = email;
+      user.otp = generatedOTP;
       user.otpExpires = otpExpires;
     }
 
     await user.save();
 
-    // If Twilio credentials are standard live environment, try Twilio call, otherwise log OTP
-    console.log(`[AUTH-OTP] Sent OTP ${dummyOTP} to mobile +91-${cleanMobile}`);
+    // Try sending SMS via Twilio if available
+    let smsSent = false;
+    if (twilioClient && twilioPhone) {
+      try {
+        await twilioClient.messages.create({
+          body: `Your Parampara India verification OTP code is ${generatedOTP}. Valid for 10 minutes.`,
+          from: twilioPhone,
+          to: `+91${cleanMobile}`
+        });
+        smsSent = true;
+        console.log(`[TWILIO SMS] Successfully dispatched OTP ${generatedOTP} to +91${cleanMobile}`);
+      } catch (smsErr) {
+        console.error(`[TWILIO SMS ERROR] ${smsErr.message}`);
+      }
+    }
+
+    console.log(`[AUTH-OTP] Stored OTP ${generatedOTP} for mobile +91-${cleanMobile}`);
 
     res.status(200).json({
       success: true,
-      message: `OTP sent successfully to +91 ${cleanMobile}`,
-      devNotice: 'In test mode, enter 123456 (or 999999 for Admin)'
+      message: smsSent ? `OTP sent via SMS to +91 ${cleanMobile}` : `OTP generated for +91 ${cleanMobile}`,
+      devNotice: smsSent ? null : 'In test mode or if SMS is delayed, enter 123456 (or generated OTP)'
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

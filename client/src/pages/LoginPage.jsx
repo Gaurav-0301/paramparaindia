@@ -11,6 +11,7 @@ const LoginPage = () => {
   const location = useLocation();
 
   const [step, setStep] = useState(1); // 1: Mobile input, 2: OTP input
+  const [fullName, setFullName] = useState('');
   const [mobile, setMobile] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [resendTimer, setResendTimer] = useState(30);
@@ -51,7 +52,7 @@ const LoginPage = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await sendOTP(mobile);
+      const res = await sendOTP(mobile, fullName);
       if (res.success) {
         setStep(2);
         setResendTimer(30);
@@ -159,11 +160,24 @@ const LoginPage = () => {
           </div>
 
           {step === 1 ? (
-            /* Step 1: Mobile Number Input */
+            /* Step 1: Mobile Number & Name Input */
             <form onSubmit={handleMobileSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-[#3A342E] mb-1.5">
-                  Mobile Number
+                  Full Name (Optional for existing members)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Ananya Sharma"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full px-4 py-3 text-xs rounded-xl border border-[#D4B896]/60 bg-white text-[#3A342E] font-medium focus:outline-none focus:border-[#9CAF97]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#3A342E] mb-1.5">
+                  Mobile Number *
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-3 text-xs font-bold text-[#3A342E]/60">+91</span>
@@ -197,9 +211,13 @@ const LoginPage = () => {
               </button>
 
               <div className="p-3 bg-[#FAF7F2] rounded-xl border border-[#EFE6D8] text-[11px] text-[#3A342E]/70 space-y-1">
-                <p className="font-semibold text-[#3A342E]">💡 Demo Login Credentials:</p>
-                <p>• Customer OTP Test: Any 10-digit number (OTP: <strong className="text-[#9CAF97]">123456</strong>)</p>
-                <p>• Admin Portal Test: Mobile <strong className="text-[#3A342E]">9999999999</strong> (OTP: <strong className="text-[#D4B896]">999999</strong>)</p>
+                <p className="font-semibold text-[#3A342E] flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#9CAF97]" /> Verification Notice:
+                </p>
+                <p>An OTP code will be generated and dispatched to your phone number.</p>
+                <p className="text-[10px] text-[#3A342E]/60 pt-0.5">
+                  • Test / Dev Mode: Enter <strong className="text-[#9CAF97]">123456</strong> (or <strong className="text-[#D4B896]">999999</strong> for Admin mobile <strong className="text-[#3A342E]">9999999999</strong>)
+                </p>
               </div>
             </form>
           ) : (

@@ -35,8 +35,8 @@ export const AuthProvider = ({ children }) => {
     fetchCurrentUser();
   }, [token]);
 
-  const sendOTP = async (mobile) => {
-    const res = await axios.post('/api/auth/send-otp', { mobile });
+  const sendOTP = async (mobile, name = '') => {
+    const res = await axios.post('/api/auth/send-otp', { mobile, name });
     return res.data;
   };
 
