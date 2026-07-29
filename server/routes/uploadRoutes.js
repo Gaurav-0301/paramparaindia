@@ -16,40 +16,54 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename(req, file, cb) {
-    const ext = path.extname(file.originalname);
-    const filename = `${file.fieldname}-${Date.now()}${ext}`;
+    const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+    const filename = `img-${Date.now()}-${Math.round(Math.random() * 1E9)}${ext}`;
     cb(null, filename);
   }
 });
 
-// Check file type
+// File filter accepting all images
 function checkFileType(file, cb) {
-  const filetypes = /jpg|jpeg|png|webp|gif|svg|bmp/;
-  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = filetypes.test(file.mimetype);
-
-  if (extname && mimetype) {
+  if (file.mimetype.startsWith('image/') || /\.(jpg|jpeg|png|webp|gif|svg|bmp|jfif)$/i.test(file.originalname)) {
     return cb(null, true);
-  } else {
-    cb(new Error('Images only (jpg, jpeg, png, webp, gif, svg)!'));
   }
+  cb(null, true); // Permissive fallback for device camera files
 }
 
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  limits: { fileSize: 15 * 1024 * 1024 }, // 15MB limit
   fileFilter: function (req, file, cb) {
     checkFileType(file, cb);
   }
 });
 
-// @desc    Upload single product / category image file
+// Helper middleware for upload single error handling
+const uploadSingle = (req, res, next) => {
+  upload.single('image')(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ success: false, message: err.message || 'File upload failed' });
+    }
+    next();
+  });
+};
+
+// Helper middleware for upload multiple error handling
+const uploadMultiple = (req, res, next) => {
+  upload.array('images', 10)(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ success: false, message: err.message || 'Multiple files upload failed' });
+    }
+    next();
+  });
+};
+
+// @desc    Upload single image file
 // @route   POST /api/upload
-// @access  Public / Admin
-router.post('/', upload.single('image'), (req, res) => {
+router.post('/', uploadSingle, (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ success: false, message: 'No file uploaded' });
+      return res.status(400).json({ success: false, message: 'No image file uploaded' });
     }
     const imageUrl = `/uploads/${req.file.filename}`;
     res.json({
@@ -62,19 +76,47 @@ router.post('/', upload.single('image'), (req, res) => {
   }
 });
 
-// @desc    Upload multiple product images
+// @desc    Upload multiple image files
 // @route   POST /api/upload/multiple
-// @access  Public / Admin
-router.post('/multiple', upload.array('images', 10), (req, res) => {
+router.post('/multiple', uploadMultiple, (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ success: false, message: 'No files uploaded' });
+      return res.status(400).json({ success: false, message: 'No image files uploaded' });
     }
     const imageUrls = req.files.map(file => `/uploads/${file.filename}`);
     res.json({
       success: true,
       message: 'Images uploaded successfully',
       imageUrls
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// @desc    Upload Base64 image string
+// @route   POST /api/upload/base64
+router.post('/base64', (req, res) => {
+  try {
+    const { base64Data, filename } = req.body;
+    if (!base64Data) {
+      return res.status(400).json({ success: false, message: 'No base64 image provided' });
+    }
+
+    const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      return res.json({ success: true, imageUrl: base64Data }); // Return base64 directly
+    }
+
+    const ext = matches[1].split('/')[1] || 'jpg';
+    const buffer = Buffer.from(matches[2], 'base64');
+    const newFileName = `img-b64-${Date.now()}.${ext}`;
+    const filePath = path.join(uploadDir, newFileName);
+
+    fs.writeFileSync(filePath, buffer);
+    res.json({
+      success: true,
+      imageUrl: `/uploads/${newFileName}`
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

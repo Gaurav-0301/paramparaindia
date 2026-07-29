@@ -245,8 +245,8 @@ const AdminDashboardPage = () => {
 
   // Upload file from File Manager (Device Storage)
   const handleFileUpload = async (e, targetIndex = null) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
     setUploadingImage(true);
     try {
@@ -259,7 +259,11 @@ const AdminDashboardPage = () => {
         const uploadedUrl = res.data.imageUrl;
 
         if (targetIndex !== null) {
-          handleImageInputChange(targetIndex, uploadedUrl);
+          setProductForm(prev => {
+            const updated = [...prev.images];
+            updated[targetIndex] = uploadedUrl;
+            return { ...prev, images: updated };
+          });
         } else {
           setProductForm(prev => ({
             ...prev,
@@ -268,9 +272,7 @@ const AdminDashboardPage = () => {
         }
       } else {
         const formData = new FormData();
-        for (let i = 0; i < files.length; i++) {
-          formData.append('images', files[i]);
-        }
+        files.forEach(f => formData.append('images', f));
         const res = await axios.post('/api/upload/multiple', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
@@ -281,12 +283,17 @@ const AdminDashboardPage = () => {
         }));
       }
     } catch (err) {
-      console.error('File Upload Server Error, using FileReader Base64 fallback:', err);
+      console.warn('Backend multipart upload warning, falling back to Base64 FileReader:', err);
+      const fileToRead = files[0];
       const reader = new FileReader();
       reader.onload = () => {
         const base64Url = reader.result;
         if (targetIndex !== null) {
-          handleImageInputChange(targetIndex, base64Url);
+          setProductForm(prev => {
+            const updated = [...prev.images];
+            updated[targetIndex] = base64Url;
+            return { ...prev, images: updated };
+          });
         } else {
           setProductForm(prev => ({
             ...prev,
@@ -294,14 +301,15 @@ const AdminDashboardPage = () => {
           }));
         }
       };
-      reader.readAsDataURL(files[0]);
+      reader.readAsDataURL(fileToRead);
     } finally {
+      if (e.target) e.target.value = '';
       setUploadingImage(false);
     }
   };
 
   const handleCategoryFileUpload = async (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
 
     setUploadingImage(true);
@@ -319,6 +327,7 @@ const AdminDashboardPage = () => {
       };
       reader.readAsDataURL(file);
     } finally {
+      if (e.target) e.target.value = '';
       setUploadingImage(false);
     }
   };
