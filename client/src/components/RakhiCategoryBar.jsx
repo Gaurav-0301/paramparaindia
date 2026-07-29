@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { getImageUrl, DEFAULT_CATEGORY_IMAGE } from '../utils/imageUrl';
+import { useCatalog } from '../context/CatalogContext';
 
 const FALLBACK_CATEGORIES = [
   { name: 'Bracelet & Combo Rakhi', image: 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?w=500&auto=format&fit=crop&q=80' },
@@ -17,28 +18,10 @@ const FALLBACK_CATEGORIES = [
 ];
 
 const RakhiCategoryBar = ({ activeSubCategory, onSelectSubCategory, title = "Explore Rakhi Categories" }) => {
-  const [categories, setCategories] = useState(FALLBACK_CATEGORIES);
-  const [loading, setLoading] = useState(true);
+  const { categories: catalogCategories } = useCatalog();
   const scrollContainerRef = useRef(null);
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await axios.get(`/api/categories?parentCategory=Rakhis&_t=${Date.now()}`);
-        if (res.data && res.data.categories && res.data.categories.length > 0) {
-          setCategories(res.data.categories);
-        }
-      } catch (err) {
-        console.log('Using fallback Rakhi subcategories list');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchCategories();
-
-    window.addEventListener('categoryUpdated', fetchCategories);
-    return () => window.removeEventListener('categoryUpdated', fetchCategories);
-  }, []);
+  const categories = catalogCategories && catalogCategories.length > 0 ? catalogCategories : FALLBACK_CATEGORIES;
 
   const handleScroll = (direction) => {
     if (scrollContainerRef.current) {

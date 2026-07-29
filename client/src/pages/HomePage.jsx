@@ -11,26 +11,15 @@ import InstagramCouponModal from '../components/InstagramCouponModal';
 import { RakhiSticker, BrotherSisterSticker, RakshaBandhanStamp, RakhiStickerBanner } from '../components/FestiveStickers';
 import axios from 'axios';
 
+import { useCatalog } from '../context/CatalogContext';
+
 const HomePage = () => {
   const navigate = useNavigate();
   const { festival } = useFestival();
-  const [featuredProducts, setFeaturedProducts] = useState([]);
-  const [loadingProducts, setLoadingProducts] = useState(true);
+  const { products: catalogProducts } = useCatalog();
   const [instaModalOpen, setInstaModalOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchFeatured = async () => {
-      try {
-        const res = await axios.get('/api/products?limit=6');
-        setFeaturedProducts(res.data.products || []);
-      } catch (err) {
-        console.error('Failed to fetch featured products:', err);
-      } finally {
-        setLoadingProducts(false);
-      }
-    };
-    fetchFeatured();
-  }, []);
+  const featuredProducts = catalogProducts && catalogProducts.length > 0 ? catalogProducts.slice(0, 6) : [];
 
   return (
     <div className="min-h-screen space-y-12 sm:space-y-20 lg:space-y-28 overflow-x-hidden">

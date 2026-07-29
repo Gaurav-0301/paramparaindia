@@ -77,7 +77,7 @@ const getActiveFestival = async (req, res) => {
         await FestivalConfig.findOneAndUpdate(
           { festivalKey: key },
           FESTIVAL_PRESETS[key],
-          { upsert: true, new: true }
+          { upsert: true, returnDocument: 'after' }
         );
       }
       active = await FestivalConfig.findOne({ isActive: true });

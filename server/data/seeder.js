@@ -21,7 +21,7 @@ const seedDB = async () => {
       await Category.findOneAndUpdate(
         { slug: catData.slug },
         { $setOnInsert: catData },
-        { upsert: true, new: true }
+        { upsert: true, returnDocument: 'after' }
       );
     }
     console.log(`Successfully verified/seeded all ${seedCategories.length} Rakhi Subcategories!`);

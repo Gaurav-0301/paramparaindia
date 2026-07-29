@@ -7,9 +7,11 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import { useFestival } from '../context/FestivalContext';
+import { useCatalog } from '../context/CatalogContext';
 
 const AdminDashboardPage = () => {
   const { refetchFestival } = useFestival();
+  const { notifyCatalogChange } = useCatalog();
   const [activeTab, setActiveTab] = useState('analytics'); // analytics, orders, products, categories, coupons, reviews, festival
 
   // Analytics data
@@ -363,6 +365,7 @@ const AdminDashboardPage = () => {
       setShowProductModal(false);
       setEditingProduct(null);
       fetchAdminProducts();
+      notifyCatalogChange();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to save product');
     }
@@ -373,6 +376,7 @@ const AdminDashboardPage = () => {
     try {
       await axios.delete(`/api/products/admin/${id}`);
       fetchAdminProducts();
+      notifyCatalogChange();
     } catch (err) {
       alert('Failed to delete product');
     }
@@ -415,7 +419,7 @@ const AdminDashboardPage = () => {
       setShowCategoryModal(false);
       setEditingCategory(null);
       fetchAdminCategories();
-      window.dispatchEvent(new Event('categoryUpdated'));
+      notifyCatalogChange();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to save category');
     }
@@ -426,6 +430,7 @@ const AdminDashboardPage = () => {
     try {
       await axios.delete(`/api/categories/admin/${id}`);
       fetchAdminCategories();
+      notifyCatalogChange();
     } catch (err) {
       alert('Failed to delete category');
     }

@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Filter, SlidersHorizontal, Search, Layers, Grid, Sparkles, ArrowRight } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import RakhiCategoryBar from '../components/RakhiCategoryBar';
+import { useCatalog } from '../context/CatalogContext';
 import axios from 'axios';
 
 const RAKHI_SUBCATEGORIES_ORDER = [
@@ -21,33 +22,24 @@ const RAKHI_SUBCATEGORIES_ORDER = [
 
 const ShopPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { products: catalogProducts, categories: catalogCategories, loadingProducts, refetchProducts } = useCatalog();
 
   const currentCategory = searchParams.get('category') || 'All';
   const currentSubCategory = searchParams.get('subCategory') || '';
   const currentSort = searchParams.get('sort') || 'newest';
   const currentSearch = searchParams.get('search') || '';
 
-  const [products, setProducts] = useState([]);
-  const [categoriesList, setCategoriesList] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState(catalogProducts);
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
-  const [viewMode, setViewMode] = useState('sections'); // 'sections' or 'grid'
+  const [viewMode, setViewMode] = useState('sections');
 
   const categories = ['All', 'Rakhis', 'Sweets', 'Gifts', 'Combos'];
+  const categoriesList = catalogCategories;
 
-  const fetchCategories = async () => {
-    try {
-      const res = await axios.get('/api/categories?parentCategory=Rakhis');
-      if (res.data && res.data.categories) {
-        setCategoriesList(res.data.categories);
-      }
-    } catch (err) {
-      console.log('Failed to fetch categories list');
-    }
-  };
-
-  const fetchProducts = async () => {
+  useEffect(() => {
+    setProducts(catalogProducts);
+  }, [catalogProducts]);
     setLoading(true);
     try {
       let url = `/api/products?sort=${currentSort}&limit=100`;
