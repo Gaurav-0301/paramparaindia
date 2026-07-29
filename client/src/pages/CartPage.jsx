@@ -68,8 +68,8 @@ const CartPage = () => {
         
         {/* Items List */}
         <div className="lg:col-span-8 space-y-4">
-          {cartItems.map((item) => (
-            <div key={item.product._id} className="p-4 bg-white/70 rounded-2xl border border-[#EFE6D8] flex gap-4 items-center">
+          {cartItems.map((item, idx) => (
+            <div key={item.product._id + (item.customText || '') + idx} className="p-4 bg-white/70 rounded-2xl border border-[#EFE6D8] flex gap-4 items-center">
               <img
                 src={item.product.images[0]}
                 alt={item.product.name}
@@ -79,6 +79,11 @@ const CartPage = () => {
                 <h3 className="font-serif-display font-medium text-base text-[#3A342E]">
                   {item.product.name}
                 </h3>
+                {item.customText && (
+                  <p className="text-xs font-semibold text-[#D4B896] bg-amber-50 border border-amber-200/80 px-2.5 py-0.5 rounded-md inline-block">
+                    Engraved Name: "<span className="text-[#3A342E]">{item.customText}</span>"
+                  </p>
+                )}
                 <p className="text-xs font-semibold text-[#3A342E]">
                   ₹{item.product.price.toLocaleString('en-IN')}
                 </p>
@@ -86,14 +91,14 @@ const CartPage = () => {
 
               <div className="flex items-center border border-[#D4B896]/60 rounded-xl bg-white">
                 <button
-                  onClick={() => updateQuantity(item.product._id, item.qty - 1)}
+                  onClick={() => updateQuantity(item.product._id, item.qty - 1, item.customText)}
                   className="px-2.5 py-1 text-xs font-semibold hover:text-[#9CAF97]"
                 >
                   <Minus className="w-3.5 h-3.5" />
                 </button>
                 <span className="px-3 text-xs font-bold">{item.qty}</span>
                 <button
-                  onClick={() => updateQuantity(item.product._id, item.qty + 1)}
+                  onClick={() => updateQuantity(item.product._id, item.qty + 1, item.customText)}
                   className="px-2.5 py-1 text-xs font-semibold hover:text-[#9CAF97]"
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -105,7 +110,7 @@ const CartPage = () => {
               </span>
 
               <button
-                onClick={() => removeFromCart(item.product._id)}
+                onClick={() => removeFromCart(item.product._id, item.customText)}
                 className="text-[#3A342E]/40 hover:text-red-600 p-2"
               >
                 <Trash2 className="w-4 h-4" />

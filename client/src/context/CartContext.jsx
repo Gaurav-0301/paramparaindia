@@ -17,34 +17,35 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem('parampara_cart', JSON.stringify(cartItems));
   }, [cartItems]);
 
-  const addToCart = (product, qty = 1) => {
+  const addToCart = (product, qty = 1, options = {}) => {
+    const customText = options.customText || '';
     setCartItems(prevItems => {
-      const existing = prevItems.find(item => item.product._id === product._id);
+      const existing = prevItems.find(item => item.product._id === product._id && (item.customText || '') === customText);
       if (existing) {
         return prevItems.map(item =>
-          item.product._id === product._id
+          (item.product._id === product._id && (item.customText || '') === customText)
             ? { ...item, qty: item.qty + qty }
             : item
         );
       } else {
-        return [...prevItems, { product, qty }];
+        return [...prevItems, { product, qty, customText }];
       }
     });
     setIsCartOpen(true);
   };
 
-  const removeFromCart = (productId) => {
-    setCartItems(prevItems => prevItems.filter(item => item.product._id !== productId));
+  const removeFromCart = (productId, customText = '') => {
+    setCartItems(prevItems => prevItems.filter(item => !(item.product._id === productId && (item.customText || '') === customText)));
   };
 
-  const updateQuantity = (productId, qty) => {
+  const updateQuantity = (productId, qty, customText = '') => {
     if (qty <= 0) {
-      removeFromCart(productId);
+      removeFromCart(productId, customText);
       return;
     }
     setCartItems(prevItems =>
       prevItems.map(item =>
-        item.product._id === productId ? { ...item, qty } : item
+        (item.product._id === productId && (item.customText || '') === customText) ? { ...item, qty } : item
       )
     );
   };

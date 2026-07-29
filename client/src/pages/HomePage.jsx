@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Sparkles, ArrowRight, ShieldCheck, Heart, Star, Award, TrendingUp } from 'lucide-react';
 import InstagramIcon from '../components/InstagramIcon';
 import { useFestival } from '../context/FestivalContext';
 import CountdownTimer from '../components/CountdownTimer';
 import GoldThreadDivider from '../components/GoldThreadDivider';
 import ProductCard from '../components/ProductCard';
+import RakhiCategoryBar from '../components/RakhiCategoryBar';
 import InstagramCouponModal from '../components/InstagramCouponModal';
 import { RakhiSticker, BrotherSisterSticker, RakshaBandhanStamp, RakhiStickerBanner } from '../components/FestiveStickers';
 import axios from 'axios';
 
 const HomePage = () => {
+  const navigate = useNavigate();
   const { festival } = useFestival();
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
@@ -170,6 +172,22 @@ const HomePage = () => {
             </div>
 
           </div>
+        </div>
+      </section>
+
+      {/* 3.5 Circular Rakhi Subcategories Carousel */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="glass-panel p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-[#D4B896]/40 shadow-xs">
+          <RakhiCategoryBar
+            onSelectSubCategory={(subCat) => {
+              if (subCat) {
+                navigate(`/shop?category=Rakhis&subCategory=${encodeURIComponent(subCat)}`);
+              } else {
+                navigate('/shop?category=Rakhis');
+              }
+            }}
+            title="Browse All Rakhi Subcategories"
+          />
         </div>
       </section>
 

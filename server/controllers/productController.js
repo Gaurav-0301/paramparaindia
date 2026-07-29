@@ -93,7 +93,10 @@ const getProductByIdentifier = async (req, res) => {
 // @route POST /api/admin/products
 const createProduct = async (req, res) => {
   try {
-    const { name, description, category, subCategory, images, price, mrp, availableQuantity, sku, festivalTag, badge, tags } = req.body;
+    const {
+      name, description, category, subCategory, images, price, mrp, availableQuantity, sku, festivalTag, badge, tags,
+      isPersonalized, customizationLabel, customizationMaxChars, customizationPlaceholder, customizationInstruction
+    } = req.body;
     
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
 
@@ -110,7 +113,12 @@ const createProduct = async (req, res) => {
       sku: sku || `SKU-${Date.now()}`,
       festivalTag: festivalTag || 'Raksha Bandhan',
       badge: badge || '',
-      tags: tags || []
+      tags: tags || [],
+      isPersonalized: isPersonalized !== undefined ? Boolean(isPersonalized) : (subCategory === 'Personalized Rakhi'),
+      customizationLabel: customizationLabel || 'Customization Text (7 Chr)',
+      customizationMaxChars: customizationMaxChars ? Number(customizationMaxChars) : 7,
+      customizationPlaceholder: customizationPlaceholder || 'Plz Enter The Text',
+      customizationInstruction: customizationInstruction || 'Type in a Word that You Would Like To Be Engraved onto Your Product (Only 7 Character)'
     });
 
     await product.save();

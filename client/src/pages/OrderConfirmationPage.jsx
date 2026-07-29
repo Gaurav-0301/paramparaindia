@@ -131,6 +131,28 @@ const OrderConfirmationPage = () => {
 
       </div>
 
+      {/* Ordered Items List */}
+      <div className="p-6 bg-white/70 rounded-2xl border border-[#EFE6D8] space-y-3">
+        <h4 className="font-serif-display text-base font-semibold text-[#3A342E]">Items In Your Order ({order.orderItems?.length})</h4>
+        <div className="divide-y divide-[#EFE6D8]">
+          {order.orderItems?.map((item, idx) => (
+            <div key={idx} className="py-3 flex items-center gap-4 text-xs">
+              <img src={item.image} alt={item.name} className="w-14 h-14 object-cover rounded-xl border border-[#D4B896]/30 bg-white" />
+              <div className="flex-1">
+                <p className="font-semibold text-[#3A342E]">{item.name}</p>
+                {item.customText && (
+                  <p className="text-[11px] font-bold text-[#D4B896] bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md mt-0.5 inline-block">
+                    Engraved Name: "<span className="text-[#3A342E]">{item.customText}</span>"
+                  </p>
+                )}
+                <p className="text-[#3A342E]/70 mt-0.5">Quantity: {item.qty} × ₹{item.price}</p>
+              </div>
+              <span className="font-bold text-[#3A342E]">₹{item.price * item.qty}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Buttons */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
         <Link

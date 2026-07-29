@@ -16,7 +16,14 @@ const productSchema = new mongoose.Schema({
   badge: { type: String, default: '' }, // e.g., 'Rakhi Special', 'Limited Edition', 'Bestseller'
   rating: { type: Number, default: 4.8 },
   numReviews: { type: Number, default: 0 },
-  tags: [{ type: String }]
+  tags: [{ type: String }],
+  
+  // Personalization Config
+  isPersonalized: { type: Boolean, default: false },
+  customizationLabel: { type: String, default: 'Customization Text (7 Chr)' },
+  customizationMaxChars: { type: Number, default: 7 },
+  customizationPlaceholder: { type: String, default: 'Plz Enter The Text' },
+  customizationInstruction: { type: String, default: 'Type in a Word that You Would Like To Be Engraved onto Your Product (Only 7 Character)' }
 }, { timestamps: true });
 
 productSchema.index({ name: 'text', description: 'text', category: 'text' });

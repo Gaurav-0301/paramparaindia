@@ -99,8 +99,8 @@ const MiniCartDrawer = () => {
                 </button>
               </div>
             ) : (
-              cartItems.map((item) => (
-                <div key={item.product._id} className="flex gap-4 p-3 bg-white/60 rounded-xl border border-[#EFE6D8]">
+              cartItems.map((item, idx) => (
+                <div key={item.product._id + (item.customText || '') + idx} className="flex gap-4 p-3 bg-white/60 rounded-xl border border-[#EFE6D8]">
                   <img
                     src={item.product.images[0]}
                     alt={item.product.name}
@@ -111,7 +111,12 @@ const MiniCartDrawer = () => {
                       <h4 className="font-serif-display text-sm font-medium text-[#3A342E] line-clamp-1">
                         {item.product.name}
                       </h4>
-                      <p className="text-xs font-semibold text-[#3A342E] mt-0.5">
+                      {item.customText && (
+                        <p className="text-[11px] font-semibold text-[#D4B896] bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md mt-1 inline-block">
+                          Engraved: "<span className="text-[#3A342E]">{item.customText}</span>"
+                        </p>
+                      )}
+                      <p className="text-xs font-semibold text-[#3A342E] mt-1">
                         ₹{item.product.price.toLocaleString('en-IN')}
                       </p>
                     </div>
@@ -120,14 +125,14 @@ const MiniCartDrawer = () => {
                       {/* Quantity Controls */}
                       <div className="flex items-center border border-[#D4B896]/50 rounded-lg bg-[#FAF7F2]">
                         <button
-                          onClick={() => updateQuantity(item.product._id, item.qty - 1)}
+                          onClick={() => updateQuantity(item.product._id, item.qty - 1, item.customText)}
                           className="p-1 hover:text-[#9CAF97]"
                         >
                           <Minus className="w-3.5 h-3.5" />
                         </button>
                         <span className="px-2.5 text-xs font-semibold">{item.qty}</span>
                         <button
-                          onClick={() => updateQuantity(item.product._id, item.qty + 1)}
+                          onClick={() => updateQuantity(item.product._id, item.qty + 1, item.customText)}
                           className="p-1 hover:text-[#9CAF97]"
                         >
                           <Plus className="w-3.5 h-3.5" />
@@ -135,7 +140,7 @@ const MiniCartDrawer = () => {
                       </div>
 
                       <button
-                        onClick={() => removeFromCart(item.product._id)}
+                        onClick={() => removeFromCart(item.product._id, item.customText)}
                         className="text-[#3A342E]/50 hover:text-red-600 transition-colors p-1"
                       >
                         <Trash2 className="w-4 h-4" />

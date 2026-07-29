@@ -6,7 +6,8 @@ const orderItemSchema = new mongoose.Schema({
   price: { type: Number, required: true },
   mrp: { type: Number, required: true },
   qty: { type: Number, required: true, min: 1 },
-  image: { type: String, required: true }
+  image: { type: String, required: true },
+  customText: { type: String, default: '' }
 });
 
 const statusHistorySchema = new mongoose.Schema({

@@ -4,8 +4,9 @@ const Product = require('../models/Product');
 const Coupon = require('../models/Coupon');
 const User = require('../models/User');
 const Order = require('../models/Order');
+const Category = require('../models/Category');
 const FestivalConfig = require('../models/FestivalConfig');
-const { seedProducts, seedCoupons } = require('./seedData');
+const { seedCategories, seedProducts, seedCoupons } = require('./seedData');
 
 dotenv.config({ path: __dirname + '/../.env' });
 
@@ -15,11 +16,29 @@ const seedDB = async () => {
     await mongoose.connect(mongoUri);
     console.log('Connected to MongoDB for Seeding...');
 
+    // Seed Categories if empty or incomplete
+    for (const catData of seedCategories) {
+      await Category.findOneAndUpdate(
+        { slug: catData.slug },
+        { $setOnInsert: catData },
+        { upsert: true, new: true }
+      );
+    }
+    console.log(`Successfully verified/seeded all ${seedCategories.length} Rakhi Subcategories!`);
+
     // Seed products if empty
     const productCount = await Product.countDocuments();
     if (productCount === 0) {
       await Product.insertMany(seedProducts);
-      console.log('Successfully seeded 6 soft-luxury festival products!');
+      console.log('Successfully seeded soft-luxury festival products!');
+    } else {
+      // Upsert seed products to ensure subcategory coverage
+      for (const prodData of seedProducts) {
+        const existing = await Product.findOne({ slug: prodData.slug });
+        if (!existing) {
+          await Product.create(prodData);
+        }
+      }
     }
 
     // Seed coupons if empty

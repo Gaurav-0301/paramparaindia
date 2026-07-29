@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, Truck, ShieldCheck, Heart, ShoppingBag, ArrowRight, CheckCircle2, AlertCircle, MessageSquare } from 'lucide-react';
+import { Star, Truck, ShieldCheck, Heart, ShoppingBag, ArrowRight, CheckCircle2, AlertCircle, MessageSquare, Sparkles, Type } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import ProductCard from '../components/ProductCard';
@@ -20,6 +20,7 @@ const ProductDetailPage = () => {
 
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [customText, setCustomText] = useState('');
   const [pincode, setPincode] = useState('');
   const [pincodeStatus, setPincodeStatus] = useState(null);
 
@@ -68,6 +69,7 @@ const ProductDetailPage = () => {
     );
   }
 
+  const isPersonalized = product.isPersonalized || product.subCategory === 'Personalized Rakhi' || product.category === 'Personalized Products';
   const isWishlisted = user?.wishlist?.some(item => (typeof item === 'object' ? item._id : item) === product._id);
   const discountPercent = product.mrp > product.price
     ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
@@ -88,8 +90,20 @@ const ProductDetailPage = () => {
     }
   };
 
+  const handleAddToCart = () => {
+    if (isPersonalized && !customText.trim()) {
+      alert('Please enter your Customization Text to be engraved on the Rakhi!');
+      return;
+    }
+    addToCart(product, quantity, { customText: customText.trim() });
+  };
+
   const handleBuyNow = () => {
-    addToCart(product, quantity);
+    if (isPersonalized && !customText.trim()) {
+      alert('Please enter your Customization Text to be engraved on the Rakhi!');
+      return;
+    }
+    addToCart(product, quantity, { customText: customText.trim() });
     navigate('/checkout');
   };
 
@@ -121,23 +135,53 @@ const ProductDetailPage = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-16">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12 sm:space-y-16">
       
+      {/* Breadcrumbs Navigation */}
+      <div className="text-xs text-[#3A342E]/70 flex items-center gap-1.5 flex-wrap">
+        <span className="hover:text-[#9CAF97] cursor-pointer" onClick={() => navigate('/')}>Home</span>
+        <span>›</span>
+        <span className="hover:text-[#9CAF97] cursor-pointer" onClick={() => navigate(`/shop?category=${encodeURIComponent(product.category)}`)}>
+          {product.category}
+        </span>
+        {product.subCategory && (
+          <>
+            <span>›</span>
+            <span className="hover:text-[#9CAF97] cursor-pointer" onClick={() => navigate(`/shop?category=${encodeURIComponent(product.category)}&subCategory=${encodeURIComponent(product.subCategory)}`)}>
+              {product.subCategory}
+            </span>
+          </>
+        )}
+        <span>›</span>
+        <span className="font-semibold text-[#3A342E] truncate max-w-xs">{product.name}</span>
+      </div>
+
       {/* Product Top Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
         
-        {/* Left Gallery */}
+        {/* Left Gallery with Live Personalization Overlay */}
         <div className="lg:col-span-6 space-y-4">
-          <div className="aspect-[4/5] rounded-3xl overflow-hidden bg-white border border-[#EFE6D8] shadow-sm relative">
+          <div className="aspect-[4/5] rounded-3xl overflow-hidden bg-white border border-[#EFE6D8] shadow-sm relative group">
             <img
               src={product.images[selectedImage] || product.images[0]}
               alt={product.name}
               className="w-full h-full object-cover"
             />
             {product.badge && (
-              <span className="absolute top-4 left-4 bg-[#FAF7F2]/90 backdrop-blur-xs text-[#3A342E] text-xs font-semibold uppercase px-3 py-1 rounded-full border border-[#D4B896]">
+              <span className="absolute top-4 left-4 bg-[#FAF7F2]/95 backdrop-blur-xs text-[#3A342E] text-xs font-semibold uppercase px-3 py-1 rounded-full border border-[#D4B896] shadow-xs">
                 {product.badge}
               </span>
+            )}
+
+            {/* LIVE OVERLAY PREVIEW FOR PERSONALIZED RAKHI */}
+            {isPersonalized && (
+              <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                <div className="transform -rotate-[35deg] translate-y-2 sm:translate-y-4 bg-gradient-to-r from-[#D4B896] via-[#FAF7F2] to-[#D4B896] text-[#3A342E] border border-[#3A342E]/40 shadow-xl px-4 py-1 sm:px-6 sm:py-1.5 rounded-md font-serif font-bold text-xs sm:text-base tracking-wider uppercase text-center min-w-[100px] max-w-[160px] border-b-2 border-b-[#3A342E]/70">
+                  <span className="drop-shadow-xs font-semibold opacity-95">
+                    {customText.trim() ? customText.trim() : (product.customizationPlaceholder || 'Your Name')}
+                  </span>
+                </div>
+              </div>
             )}
           </div>
 
@@ -159,29 +203,41 @@ const ProductDetailPage = () => {
           )}
         </div>
 
-        {/* Right Info Details */}
-        <div className="lg:col-span-6 space-y-6">
+        {/* Right Info & Customization Controls */}
+        <div className="lg:col-span-6 space-y-5">
           <div>
             <span className="text-xs uppercase tracking-widest text-[#9CAF97] font-semibold">
               {product.category} {product.subCategory ? `• ${product.subCategory}` : ''}
             </span>
-            <h1 className="font-serif-display text-3xl sm:text-4xl font-semibold text-[#3A342E] mt-1">
+            <h1 className="font-serif-display text-2xl sm:text-4xl font-semibold text-[#3A342E] mt-1 leading-snug">
               {product.name}
             </h1>
 
-            {/* Rating Summary */}
-            <div className="flex items-center gap-2 mt-2 text-xs">
+            <div className="flex items-center gap-3 mt-2 text-xs flex-wrap">
+              <span className="text-[#3A342E]/60">SKU: <strong className="font-mono text-[#3A342E]">{product.sku}</strong></span>
+              <span className="text-[#3A342E]/30">•</span>
               <div className="flex items-center text-[#D4B896]">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} className={`w-4 h-4 ${i < Math.floor(product.rating) ? 'fill-[#D4B896]' : 'text-[#EFE6D8]'}`} />
+                  <Star key={i} className={`w-3.5 h-3.5 ${i < Math.floor(product.rating) ? 'fill-[#D4B896]' : 'text-[#EFE6D8]'}`} />
                 ))}
               </div>
               <span className="font-bold text-[#3A342E]">{product.rating}</span>
-              <span className="text-[#3A342E]/50">({product.numReviews} Verified Reviews)</span>
+              <span className="text-[#3A342E]/50">({product.numReviews} Reviews)</span>
             </div>
           </div>
 
-          {/* Pricing */}
+          {/* Free Shipping Highlight Banner (Reference Image 1) */}
+          <div className="bg-red-50/90 border border-red-200/90 rounded-2xl p-3.5 flex items-center gap-3 text-red-900 shadow-2xs">
+            <div className="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+              <Truck className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-bold text-xs text-red-700 uppercase tracking-wider">Free Shipping</h4>
+              <p className="text-[11px] text-red-600 font-medium">Above ₹599 Across India</p>
+            </div>
+          </div>
+
+          {/* Pricing Box */}
           <div className="flex items-baseline gap-3 p-4 glass-panel rounded-2xl border border-[#D4B896]/30">
             <span className="text-3xl font-semibold text-[#3A342E]">
               ₹{product.price.toLocaleString('en-IN')}
@@ -191,8 +247,8 @@ const ProductDetailPage = () => {
                 <span className="text-base text-[#3A342E]/40 line-through">
                   ₹{product.mrp.toLocaleString('en-IN')}
                 </span>
-                <span className="text-xs font-bold text-[#9CAF97] uppercase tracking-wider bg-[#9CAF97]/15 px-2.5 py-1 rounded-full">
-                  Save {discountPercent}%
+                <span className="text-xs font-bold text-red-600 bg-red-100 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                  {discountPercent}% OFF
                 </span>
               </>
             )}
@@ -202,6 +258,69 @@ const ProductDetailPage = () => {
           <p className="text-xs sm:text-sm text-[#3A342E]/80 leading-relaxed font-normal">
             {product.description}
           </p>
+
+          {/* PERSONALIZATION CUSTOM TEXT INPUT FIELD (Reference Image 1) */}
+          {isPersonalized && (
+            <div className="p-4 sm:p-5 bg-amber-50/70 rounded-2xl border border-amber-200/90 space-y-2.5 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-[#3A342E] uppercase tracking-wider flex items-center gap-1.5">
+                  <Type className="w-4 h-4 text-[#D4B896]" />
+                  {product.customizationLabel || `Customization Text (${product.customizationMaxChars || 7} Chr)`} <span className="text-red-500">*</span>
+                </label>
+                <span className="text-[10px] text-[#3A342E]/60 font-mono font-semibold">
+                  {customText.length}/{product.customizationMaxChars || 7} Chars
+                </span>
+              </div>
+
+              <input
+                type="text"
+                required
+                placeholder={product.customizationPlaceholder || "Plz Enter The Text"}
+                maxLength={product.customizationMaxChars || 7}
+                value={customText}
+                onChange={(e) => setCustomText(e.target.value)}
+                className="w-full px-4 py-3 text-xs font-medium rounded-xl border border-[#D4B896] bg-white focus:outline-none focus:ring-2 focus:ring-[#9CAF97] text-[#3A342E] shadow-2xs"
+              />
+
+              <p className="text-[11px] text-[#3A342E]/70 leading-normal">
+                {product.customizationInstruction || `Type in a Word that You Would Like To Be Engraved onto Your Product (Only ${product.customizationMaxChars || 7} Character)`}
+              </p>
+            </div>
+          )}
+
+          {/* Delivery Timeline Stepper (Reference Image 1) */}
+          <div className="p-4 bg-white/80 rounded-2xl border border-[#EFE6D8] space-y-2">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-[#9CAF97]">Estimated Fulfillment Timeline</span>
+            <div className="flex items-center justify-between gap-1 text-[11px] text-center pt-1">
+              <div className="flex flex-col items-center flex-1">
+                <div className="w-8 h-8 rounded-full bg-[#3A342E] text-white flex items-center justify-center mb-1 shadow-2xs">
+                  <ShoppingBag className="w-4 h-4 text-[#D4B896]" />
+                </div>
+                <span className="font-bold text-[#3A342E]">{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                <span className="text-[10px] text-[#3A342E]/60">Order Today</span>
+              </div>
+
+              <span className="text-red-500 font-bold pb-4">➔</span>
+
+              <div className="flex flex-col items-center flex-1">
+                <div className="w-8 h-8 rounded-full bg-[#9CAF97] text-white flex items-center justify-center mb-1 shadow-2xs">
+                  <Truck className="w-4 h-4" />
+                </div>
+                <span className="font-bold text-[#3A342E]">1-2 Days</span>
+                <span className="text-[10px] text-[#3A342E]/60">Order Ready</span>
+              </div>
+
+              <span className="text-red-500 font-bold pb-4">➔</span>
+
+              <div className="flex flex-col items-center flex-1">
+                <div className="w-8 h-8 rounded-full bg-[#D4B896] text-[#3A342E] flex items-center justify-center mb-1 shadow-2xs">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+                <span className="font-bold text-[#3A342E]">3-4 Days</span>
+                <span className="text-[10px] text-[#3A342E]/60">Delivered</span>
+              </div>
+            </div>
+          </div>
 
           {/* Stock & Quantity Selector */}
           <div className="space-y-4 pt-2">
@@ -232,7 +351,7 @@ const ProductDetailPage = () => {
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <button
-                onClick={() => addToCart(product, quantity)}
+                onClick={handleAddToCart}
                 className="flex-1 py-3.5 bg-[#3A342E] text-[#FAF7F2] text-xs uppercase tracking-widest font-semibold rounded-xl hover:bg-[#9CAF97] transition-all flex items-center justify-center gap-2 shadow-md"
               >
                 <ShoppingBag className="w-4 h-4" /> Add to Cart
@@ -286,7 +405,7 @@ const ProductDetailPage = () => {
 
       <GoldThreadDivider />
 
-      {/* Flipkart-Style "Similar Products" / "You May Also Like" Carousel */}
+      {/* Recommendations */}
       {similarProducts.length > 0 && (
         <section className="space-y-6">
           <div className="flex items-center justify-between">
@@ -304,7 +423,7 @@ const ProductDetailPage = () => {
         </section>
       )}
 
-      {/* Customer Reviews & Ratings Section */}
+      {/* Customer Reviews Section */}
       <section className="space-y-8">
         <div className="flex items-center justify-between">
           <div>
@@ -313,7 +432,7 @@ const ProductDetailPage = () => {
           </div>
         </div>
 
-        {/* Leave a review form */}
+        {/* Leave review form */}
         <div className="p-6 glass-panel rounded-2xl border border-[#D4B896]/40 space-y-4">
           <h3 className="font-serif-display text-lg font-semibold text-[#3A342E] flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-[#9CAF97]" /> Share Your Experience

@@ -61,7 +61,8 @@ const CheckoutPage = () => {
         orderItems: cartItems.map(item => ({
           product: item.product._id,
           name: item.product.name,
-          qty: item.qty
+          qty: item.qty,
+          customText: item.customText || ''
         })),
         shippingAddress: {
           fullName: currentAddress.fullName,
@@ -267,11 +268,14 @@ const CheckoutPage = () => {
             <h3 className="font-serif-display text-lg font-semibold text-[#3A342E]">Order Confirmation</h3>
 
             <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
-              {cartItems.map((item) => (
-                <div key={item.product._id} className="flex items-center gap-3 text-xs">
+              {cartItems.map((item, idx) => (
+                <div key={item.product._id + (item.customText || '') + idx} className="flex items-center gap-3 text-xs">
                   <img src={item.product.images[0]} alt="" className="w-12 h-12 object-cover rounded-lg bg-white" />
                   <div className="flex-1">
                     <p className="font-semibold text-[#3A342E] line-clamp-1">{item.product.name}</p>
+                    {item.customText && (
+                      <p className="text-[10px] text-[#D4B896] font-bold">Engraved: "{item.customText}"</p>
+                    )}
                     <p className="text-[#3A342E]/60">Qty: {item.qty} × ₹{item.product.price}</p>
                   </div>
                   <span className="font-bold">₹{item.product.price * item.qty}</span>
