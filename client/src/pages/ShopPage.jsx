@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Filter, SlidersHorizontal, Search, Layers, Grid, Sparkles, ArrowRight } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import RakhiCategoryBar from '../components/RakhiCategoryBar';
 import { useCatalog } from '../context/CatalogContext';
+import { getImageUrl, DEFAULT_CATEGORY_IMAGE } from '../utils/imageUrl';
 import axios from 'axios';
 
 const RAKHI_SUBCATEGORIES_ORDER = [
@@ -22,7 +23,7 @@ const RAKHI_SUBCATEGORIES_ORDER = [
 
 const ShopPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { products: catalogProducts, categories: catalogCategories, loadingProducts, refetchProducts } = useCatalog();
+  const { products: catalogProducts, categories: catalogCategories, loadingProducts } = useCatalog();
 
   const currentCategory = searchParams.get('category') || 'All';
   const currentSubCategory = searchParams.get('subCategory') || '';
@@ -30,16 +31,14 @@ const ShopPage = () => {
   const currentSearch = searchParams.get('search') || '';
 
   const [products, setProducts] = useState(catalogProducts);
+  const [loading, setLoading] = useState(false);
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [viewMode, setViewMode] = useState('sections');
 
   const categories = ['All', 'Rakhis', 'Sweets', 'Gifts', 'Combos'];
-  const categoriesList = catalogCategories;
 
-  useEffect(() => {
-    setProducts(catalogProducts);
-  }, [catalogProducts]);
+  const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
       let url = `/api/products?sort=${currentSort}&limit=100`;
@@ -56,15 +55,17 @@ const ShopPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentCategory, currentSubCategory, currentSort, currentSearch, minPrice, maxPrice]);
 
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    if (!minPrice && !maxPrice) {
+      setProducts(catalogProducts);
+    }
+  }, [catalogProducts, minPrice, maxPrice]);
 
   useEffect(() => {
     fetchProducts();
-  }, [currentCategory, currentSubCategory, currentSort, currentSearch]);
+  }, [fetchProducts]);
 
   const handleCategoryChange = (cat) => {
     const params = new URLSearchParams(searchParams);
@@ -101,19 +102,34 @@ const ShopPage = () => {
     fetchProducts();
   };
 
-  // Group products by subcategory when in 'sections' view mode and no single subcategory filter is applied
+  // Group products dynamically by subcategory using live catalogCategories from backend/admin panel
   const isRakhiSectionView = (currentCategory === 'Rakhis' || currentCategory === 'All') && !currentSubCategory && !currentSearch && viewMode === 'sections';
 
-  const groupedProducts = RAKHI_SUBCATEGORIES_ORDER.map(subCatName => {
-    const matchingProducts = products.filter(p => p.subCategory === subCatName || (p.category === 'Rakhis' && p.subCategory?.includes(subCatName)));
-    const catMetadata = categoriesList.find(c => c.name === subCatName);
+  const subCategoryList = catalogCategories && catalogCategories.length > 0
+    ? catalogCategories
+    : RAKHI_SUBCATEGORIES_ORDER.map((name, idx) => ({ name, displayOrder: idx }));
+
+  const groupedProducts = subCategoryList.map(catItem => {
+    const subCatName = typeof catItem === 'string' ? catItem : catItem.name;
+    const catImage = (typeof catItem === 'object' && catItem.image)
+      ? catItem.image
+      : 'https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?w=500&auto=format&fit=crop&q=80';
+    const catDescription = (typeof catItem === 'object' && catItem.description)
+      ? catItem.description
+      : `Handcrafted ${subCatName} collection for Raksha Bandhan.`;
+
+    const matchingProducts = products.filter(p =>
+      p.subCategory === subCatName ||
+      (p.category === 'Rakhis' && p.subCategory?.toLowerCase() === subCatName.toLowerCase())
+    );
+
     return {
       subCategoryName: subCatName,
-      image: catMetadata?.image || 'https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?w=500&auto=format&fit=crop&q=80',
-      description: catMetadata?.description || `Handcrafted ${subCatName} collection for Raksha Bandhan.`,
+      image: getImageUrl(catImage, DEFAULT_CATEGORY_IMAGE),
+      description: catDescription,
       products: matchingProducts
     };
-  }).filter(group => group.products.length > 0 || categoriesList.length > 0);
+  }).filter(group => group.products.length > 0 || catalogCategories.some(c => c.name === group.subCategoryName));
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 sm:space-y-8">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Sparkles, ArrowRight, ShieldCheck, Heart, Star, Award, TrendingUp } from 'lucide-react';
 import InstagramIcon from '../components/InstagramIcon';
@@ -9,6 +9,7 @@ import ProductCard from '../components/ProductCard';
 import RakhiCategoryBar from '../components/RakhiCategoryBar';
 import InstagramCouponModal from '../components/InstagramCouponModal';
 import { RakhiSticker, BrotherSisterSticker, RakshaBandhanStamp, RakhiStickerBanner } from '../components/FestiveStickers';
+import { getImageUrl, DEFAULT_CATEGORY_IMAGE } from '../utils/imageUrl';
 import axios from 'axios';
 
 import { useCatalog } from '../context/CatalogContext';
@@ -16,10 +17,15 @@ import { useCatalog } from '../context/CatalogContext';
 const HomePage = () => {
   const navigate = useNavigate();
   const { festival } = useFestival();
-  const { products: catalogProducts } = useCatalog();
+  const { products: catalogProducts, categories: catalogCategories } = useCatalog();
   const [instaModalOpen, setInstaModalOpen] = useState(false);
 
   const featuredProducts = catalogProducts && catalogProducts.length > 0 ? catalogProducts.slice(0, 6) : [];
+
+  const resolveCategoryImage = (key, fallback) => {
+    const found = catalogCategories?.find(c => c.name.toLowerCase().includes(key.toLowerCase()));
+    return found?.image ? getImageUrl(found.image, DEFAULT_CATEGORY_IMAGE) : fallback;
+  };
 
   return (
     <div className="min-h-screen space-y-12 sm:space-y-20 lg:space-y-28 overflow-x-hidden">
@@ -192,25 +198,25 @@ const HomePage = () => {
             {
               title: 'Designer Rakhis',
               count: '30+ Designs',
-              image: 'https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?w=600&auto=format&fit=crop&q=80',
+              image: resolveCategoryImage('Designer', 'https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?w=600&auto=format&fit=crop&q=80'),
               link: '/shop?category=Rakhis'
             },
             {
               title: 'Artisanal Mithai',
               count: 'Freshly Prepared',
-              image: 'https://images.unsplash.com/photo-1582293041079-7814c2f12063?w=600&auto=format&fit=crop&q=80',
+              image: resolveCategoryImage('Sweets', 'https://images.unsplash.com/photo-1582293041079-7814c2f12063?w=600&auto=format&fit=crop&q=80'),
               link: '/shop?category=Sweets'
             },
             {
               title: 'Luxury Hampers',
               count: 'Complete Combos',
-              image: 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=600&auto=format&fit=crop&q=80',
+              image: resolveCategoryImage('Combo', 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=600&auto=format&fit=crop&q=80'),
               link: '/shop?category=Gifts'
             },
             {
               title: '925 Silver Rakhis',
               count: 'Pure Hallmark',
-              image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600&auto=format&fit=crop&q=80',
+              image: resolveCategoryImage('Golden', 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600&auto=format&fit=crop&q=80'),
               link: '/shop?category=Rakhis&subCategory=Silver+925'
             }
           ].map((cat, idx) => (

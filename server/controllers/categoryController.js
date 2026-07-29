@@ -86,6 +86,13 @@ const updateCategory = async (req, res) => {
     const updateData = { ...req.body };
     delete updateData.__v;
 
+    const existingCategory = await Category.findById(req.params.id);
+    if (!existingCategory) {
+      return res.status(404).json({ message: 'Category not found' });
+    }
+
+    const oldName = existingCategory.name;
+
     if (updateData.name) {
       updateData.slug = updateData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
     }
@@ -96,8 +103,12 @@ const updateCategory = async (req, res) => {
       { returnDocument: 'after', runValidators: true }
     );
 
-    if (!category) {
-      return res.status(404).json({ message: 'Category not found' });
+    if (updateData.name && oldName !== updateData.name) {
+      const Product = require('../models/Product');
+      await Product.updateMany(
+        { subCategory: oldName },
+        { $set: { subCategory: updateData.name } }
+      );
     }
 
     res.status(200).json({ success: true, category });
