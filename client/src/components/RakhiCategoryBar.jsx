@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
-import axios from 'axios';
+import { getImageUrl, DEFAULT_CATEGORY_IMAGE } from '../utils/imageUrl';
 
 const FALLBACK_CATEGORIES = [
   { name: 'Bracelet & Combo Rakhi', image: 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?w=500&auto=format&fit=crop&q=80' },
@@ -112,8 +112,9 @@ const RakhiCategoryBar = ({ activeSubCategory, onSelectSubCategory, title = "Exp
                 >
                   <div className="w-full h-full rounded-full overflow-hidden bg-white">
                     <img
-                      src={cat.image}
+                      src={getImageUrl(cat.image, DEFAULT_CATEGORY_IMAGE)}
                       alt={cat.name}
+                      onError={(e) => { e.target.src = DEFAULT_CATEGORY_IMAGE; }}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-110"
                       loading="lazy"
                     />

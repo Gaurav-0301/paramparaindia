@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Heart, ShoppingBag, Star } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { getImageUrl, DEFAULT_PRODUCT_IMAGE } from '../utils/imageUrl';
 
 const ProductCard = ({ product }) => {
   const { addToCart } = useCart();
@@ -31,8 +32,9 @@ const ProductCard = ({ product }) => {
       {/* Product Image Container */}
       <Link to={`/product/${product.slug}`} className="relative aspect-[4/5] overflow-hidden bg-[#FAF7F2]">
         <img
-          src={product.images[0] || 'https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?w=800&auto=format&fit=crop&q=80'}
+          src={getImageUrl(product.images?.[0])}
           alt={product.name}
+          onError={(e) => { e.target.src = DEFAULT_PRODUCT_IMAGE; }}
           className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
           loading="lazy"
         />

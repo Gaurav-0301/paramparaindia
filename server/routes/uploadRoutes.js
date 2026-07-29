@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const cloudinary = require('cloudinary').v2;
 
-// Configure Cloudinary from Environment
+// Configure Cloudinary
 const isCloudinaryConfigured = !!(
   process.env.CLOUDINARY_CLOUD_NAME &&
   process.env.CLOUDINARY_API_KEY &&
@@ -20,107 +20,73 @@ if (isCloudinaryConfigured) {
   });
 }
 
-// Ensure local uploads directory exists as fallback
+// Ensure local uploads directory exists
 const uploadDir = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Configure Storage Engine
-const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    cb(null, uploadDir);
-  },
-  filename(req, file, cb) {
-    const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
-    const filename = `img-${Date.now()}-${Math.round(Math.random() * 1E9)}${ext}`;
-    cb(null, filename);
-  }
-});
-
-// File filter accepting all images
-function checkFileType(file, cb) {
-  if (file.mimetype.startsWith('image/') || /\.(jpg|jpeg|png|webp|gif|svg|bmp|jfif)$/i.test(file.originalname)) {
-    return cb(null, true);
-  }
-  cb(null, true);
-}
-
+// Memory Storage for zero disk-lag uploads
+const storage = multer.memoryStorage();
 const upload = multer({
   storage,
-  limits: { fileSize: 15 * 1024 * 1024 }, // 15MB
-  fileFilter: function (req, file, cb) {
-    checkFileType(file, cb);
-  }
+  limits: { fileSize: 20 * 1024 * 1024 } // 20MB limit
 });
 
-// Helper: Upload file or path to Cloudinary
-const uploadToCloudinary = async (filePathOrBase64, folder = 'parampara_catalog') => {
-  if (!isCloudinaryConfigured) return null;
-  try {
-    const res = await cloudinary.uploader.upload(filePathOrBase64, {
-      folder,
-      resource_type: 'auto'
-    });
-    return res.secure_url;
-  } catch (err) {
-    console.error('Cloudinary upload warning:', err.message || err);
-    return null;
+// Helper: Stream buffer to Cloudinary with auto compression
+const processImageBuffer = async (buffer, originalname) => {
+  const ext = path.extname(originalname || '.jpg').toLowerCase() || '.jpg';
+  const filename = `img-${Date.now()}-${Math.round(Math.random() * 1E6)}${ext}`;
+  const localFilePath = path.join(uploadDir, filename);
+
+  // Always write local file as instant fallback
+  fs.writeFileSync(localFilePath, buffer);
+  const localUrl = `/uploads/${filename}`;
+
+  if (!isCloudinaryConfigured) {
+    return localUrl;
   }
-};
 
-// Helper middleware for upload single error handling
-const uploadSingle = (req, res, next) => {
-  upload.single('image')(req, res, (err) => {
-    if (err) {
-      return res.status(400).json({ success: false, message: err.message || 'File upload failed' });
-    }
-    next();
+  return new Promise((resolve) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: 'parampara_catalog',
+        transformation: [{ width: 1200, crop: 'limit', quality: 'auto', fetch_format: 'auto' }]
+      },
+      (error, result) => {
+        if (error || !result) {
+          console.warn('Cloudinary upload warning (using local fallback):', error?.message || error);
+          return resolve(localUrl);
+        }
+        resolve(result.secure_url);
+      }
+    );
+    uploadStream.end(buffer);
   });
 };
 
-// Helper middleware for upload multiple error handling
-const uploadMultiple = (req, res, next) => {
-  upload.array('images', 10)(req, res, (err) => {
-    if (err) {
-      return res.status(400).json({ success: false, message: err.message || 'Multiple files upload failed' });
-    }
-    next();
-  });
-};
-
-// @desc    Upload single image file (Pushes to Cloudinary if available, fallback to local disk)
+// @desc    Upload single image
 // @route   POST /api/upload
-router.post('/', uploadSingle, async (req, res) => {
+router.post('/', upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No image file uploaded' });
     }
 
-    const localPath = req.file.path;
-    const fallbackUrl = `/uploads/${req.file.filename}`;
-
-    // Attempt Cloudinary Upload
-    let imageUrl = await uploadToCloudinary(localPath);
-
-    if (!imageUrl) {
-      imageUrl = fallbackUrl;
-    }
-
+    const imageUrl = await processImageBuffer(req.file.buffer, req.file.originalname);
     res.json({
       success: true,
-      message: 'Image uploaded successfully',
-      imageUrl,
-      isCloudinary: imageUrl.includes('cloudinary.com')
+      message: 'Image processed successfully',
+      imageUrl
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// @desc    Upload multiple image files
+// @desc    Upload multiple images
 // @route   POST /api/upload/multiple
-router.post('/multiple', uploadMultiple, async (req, res) => {
+router.post('/multiple', upload.array('images', 10), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ success: false, message: 'No image files uploaded' });
@@ -128,14 +94,13 @@ router.post('/multiple', uploadMultiple, async (req, res) => {
 
     const imageUrls = [];
     for (const file of req.files) {
-      let url = await uploadToCloudinary(file.path);
-      if (!url) url = `/uploads/${file.filename}`;
+      const url = await processImageBuffer(file.buffer, file.originalname);
       imageUrls.push(url);
     }
 
     res.json({
       success: true,
-      message: 'Images uploaded successfully',
+      message: 'Images processed successfully',
       imageUrls
     });
   } catch (error) {
@@ -143,37 +108,26 @@ router.post('/multiple', uploadMultiple, async (req, res) => {
   }
 });
 
-// @desc    Upload Base64 image string to Cloudinary
+// @desc    Upload Base64 image payload
 // @route   POST /api/upload/base64
 router.post('/base64', async (req, res) => {
   try {
     const { base64Data } = req.body;
     if (!base64Data) {
-      return res.status(400).json({ success: false, message: 'No base64 image provided' });
+      return res.status(400).json({ success: false, message: 'No base64 data provided' });
     }
 
-    let imageUrl = await uploadToCloudinary(base64Data);
-
-    if (!imageUrl) {
-      // Local disk fallback
-      const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-      if (!matches || matches.length !== 3) {
-        return res.json({ success: true, imageUrl: base64Data });
-      }
-
-      const ext = matches[1].split('/')[1] || 'jpg';
-      const buffer = Buffer.from(matches[2], 'base64');
-      const newFileName = `img-b64-${Date.now()}.${ext}`;
-      const filePath = path.join(uploadDir, newFileName);
-
-      fs.writeFileSync(filePath, buffer);
-      imageUrl = `/uploads/${newFileName}`;
+    const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      return res.json({ success: true, imageUrl: base64Data });
     }
+
+    const buffer = Buffer.from(matches[2], 'base64');
+    const imageUrl = await processImageBuffer(buffer, 'upload.jpg');
 
     res.json({
       success: true,
-      imageUrl,
-      isCloudinary: imageUrl.includes('cloudinary.com')
+      imageUrl
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
