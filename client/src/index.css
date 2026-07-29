@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-cream: #FAF7F2;
+    --color-sage: #9CAF97;
+    --color-gold: #D4B896;
+    --color-charcoal: #3A342E;
+    --color-blush: #EFE6D8;
+    --color-rose: #E8D3CE;
+  }
+
+  body {
+    background-color: #FAF7F2;
+    color: #3A342E;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, .font-serif-display {
+    font-family: 'Playfair Display', serif;
+  }
+}
+
+/* Glassmorphism utility classes */
+.glass-panel {
+  background: rgba(250, 247, 242, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(212, 184, 150, 0.3);
+}
+
+.glass-modal {
+  background: rgba(250, 247, 242, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(212, 184, 150, 0.4);
+}
+
+.glass-dark {
+  background: rgba(58, 52, 46, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(212, 184, 150, 0.2);
+}
+
+/* Signature gold thread divider animation */
+.gold-thread-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, #D4B896 50%, transparent 100%);
+}
+
+.gold-thread-hover {
+  position: relative;
+}
+.gold-thread-hover::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0%;
+  height: 1px;
+  background-color: #D4B896;
+  transition: width 0.3s ease;
+}
+.gold-thread-hover:hover::after {
+  width: 100%;
+}
+
+/* Custom animations for festive stickers */
+@keyframes bounceSlow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-bounce-slow {
+  animation: bounceSlow 4s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spinSlow 25s linear infinite;
+}
+
