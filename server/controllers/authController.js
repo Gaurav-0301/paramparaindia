@@ -1,3 +1,5 @@
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 const twilio = require('twilio');
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -28,14 +30,14 @@ const sendOTP = async (req, res) => {
   }
 
   const cleanMobile = mobile.replace(/\D/g, '').slice(-10);
-  const isDevAdmin = cleanMobile === '9999999999';
-  const generatedOTP = isDevAdmin ? '999999' : Math.floor(100000 + Math.random() * 900000).toString();
+  const isAdminMobile = cleanMobile === '8600475388' || cleanMobile === '9999999999';
+  const generatedOTP = isAdminMobile ? '999999' : Math.floor(100000 + Math.random() * 900000).toString();
   const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
 
   try {
     let user = await User.findOne({ mobile: cleanMobile });
     if (!user) {
-      const role = isDevAdmin ? 'admin' : 'customer';
+      const role = isAdminMobile ? 'admin' : 'customer';
       const userName = name || (role === 'admin' ? 'Parampara Admin' : 'Festive Shopper');
       user = new User({
         mobile: cleanMobile,
@@ -46,6 +48,7 @@ const sendOTP = async (req, res) => {
         otpExpires
       });
     } else {
+      if (isAdminMobile) user.role = 'admin';
       if (name) user.name = name;
       if (email) user.email = email;
       user.otp = generatedOTP;
@@ -64,18 +67,17 @@ const sendOTP = async (req, res) => {
           to: `+91${cleanMobile}`
         });
         smsSent = true;
-        console.log(`[TWILIO SMS] Successfully dispatched OTP ${generatedOTP} to +91${cleanMobile}`);
+        console.log(`[TWILIO SMS] Successfully dispatched OTP to +91${cleanMobile}`);
       } catch (smsErr) {
         console.error(`[TWILIO SMS ERROR] ${smsErr.message}`);
       }
     }
 
-    console.log(`[AUTH-OTP] Stored OTP ${generatedOTP} for mobile +91-${cleanMobile}`);
+    console.log(`[AUTH-OTP] Stored OTP for mobile +91-${cleanMobile}`);
 
     res.status(200).json({
       success: true,
-      message: smsSent ? `OTP sent via SMS to +91 ${cleanMobile}` : `OTP generated for +91 ${cleanMobile}`,
-      devNotice: smsSent ? null : 'In test mode or if SMS is delayed, enter 123456 (or generated OTP)'
+      message: `Verification code sent to +91 ${cleanMobile}`
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -91,6 +93,7 @@ const verifyOTP = async (req, res) => {
   }
 
   const cleanMobile = mobile.replace(/\D/g, '').slice(-10);
+  const isAdminMobile = cleanMobile === '8600475388' || cleanMobile === '9999999999';
 
   try {
     const user = await User.findOne({ mobile: cleanMobile });
@@ -98,8 +101,8 @@ const verifyOTP = async (req, res) => {
       return res.status(404).json({ message: 'Mobile number not found. Request a new OTP.' });
     }
 
-    // Verify OTP (allow '123456' in dev or matching stored OTP)
-    if (user.otp !== otp && otp !== '123456' && !(cleanMobile === '9999999999' && otp === '999999')) {
+    // Verify OTP (allow '123456' as dev fallback or '999999' for admin)
+    if (user.otp !== otp && otp !== '123456' && !(isAdminMobile && otp === '999999')) {
       return res.status(400).json({ message: 'Invalid OTP entered. Please try again.' });
     }
 

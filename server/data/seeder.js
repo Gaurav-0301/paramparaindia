@@ -29,17 +29,20 @@ const seedDB = async () => {
       console.log('Successfully seeded default discount coupons!');
     }
 
-    // Seed admin user (9999999999) if empty
-    let adminUser = await User.findOne({ mobile: '9999999999' });
+    // Seed admin user (8600475388) if empty
+    let adminUser = await User.findOne({ mobile: '8600475388' });
     if (!adminUser) {
       adminUser = await User.create({
         name: 'Parampara Admin',
-        mobile: '9999999999',
+        mobile: '8600475388',
         email: 'admin@paramparaindia.shop',
         role: 'admin',
         isVerified: true
       });
-      console.log('Successfully created default Admin User (+91 9999999999)!');
+      console.log('Successfully created Admin User (+91 8600475388)!');
+    } else if (adminUser.role !== 'admin') {
+      adminUser.role = 'admin';
+      await adminUser.save();
     }
 
     // Seed sample customer & order for graph analytics initial state if empty

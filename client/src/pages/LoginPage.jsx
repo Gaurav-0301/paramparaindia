@@ -210,14 +210,9 @@ const LoginPage = () => {
                 )}
               </button>
 
-              <div className="p-3 bg-[#FAF7F2] rounded-xl border border-[#EFE6D8] text-[11px] text-[#3A342E]/70 space-y-1">
-                <p className="font-semibold text-[#3A342E] flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#9CAF97]" /> Verification Notice:
-                </p>
-                <p>An OTP code will be generated and dispatched to your phone number.</p>
-                <p className="text-[10px] text-[#3A342E]/60 pt-0.5">
-                  • Test / Dev Mode: Enter <strong className="text-[#9CAF97]">123456</strong> (or <strong className="text-[#D4B896]">999999</strong> for Admin mobile <strong className="text-[#3A342E]">9999999999</strong>)
-                </p>
+              <div className="flex items-center justify-center gap-1.5 text-[11px] text-[#3A342E]/60 pt-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#9CAF97]" />
+                <span>Secured via Parampara Verification System</span>
               </div>
             </form>
           ) : (
@@ -255,7 +250,6 @@ const LoginPage = () => {
                 </div>
               </div>
 
-              {devNotice && <p className="text-[11px] text-[#9CAF97] font-semibold">{devNotice}</p>}
               {error && <p className="text-xs text-red-600 font-medium">{error}</p>}
 
               <button
