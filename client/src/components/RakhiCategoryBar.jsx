@@ -35,6 +35,9 @@ const RakhiCategoryBar = ({ activeSubCategory, onSelectSubCategory, title = "Exp
       }
     };
     fetchCategories();
+
+    window.addEventListener('categoryUpdated', fetchCategories);
+    return () => window.removeEventListener('categoryUpdated', fetchCategories);
   }, []);
 
   const handleScroll = (direction) => {

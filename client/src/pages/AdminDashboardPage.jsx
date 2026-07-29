@@ -415,6 +415,7 @@ const AdminDashboardPage = () => {
       setShowCategoryModal(false);
       setEditingCategory(null);
       fetchAdminCategories();
+      window.dispatchEvent(new Event('categoryUpdated'));
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to save category');
     }
