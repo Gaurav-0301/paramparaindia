@@ -793,7 +793,12 @@ const compressImageFile = (file) => {
                 >
                   {/* Circle Thumbnail */}
                   <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-[#D4B896] shrink-0 bg-stone-100">
-                    <img src={cat.image} alt={cat.name} className="w-full h-full object-cover" />
+                    <img
+                      src={getImageUrl(cat.image, DEFAULT_CATEGORY_IMAGE)}
+                      alt={cat.name}
+                      onError={(e) => { e.target.src = DEFAULT_CATEGORY_IMAGE; }}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
 
                   <div className="flex-1 min-w-0 pr-12">
@@ -865,7 +870,12 @@ const compressImageFile = (file) => {
                   {adminProducts.map(prod => (
                     <tr key={prod._id} className="hover:bg-white/40">
                       <td className="py-3 px-4 flex items-center gap-3">
-                        <img src={prod.images?.[0]} alt={prod.name} className="w-10 h-10 rounded-lg object-cover border border-[#D4B896]/40" />
+                        <img
+                          src={getImageUrl(prod.images?.[0], DEFAULT_CATEGORY_IMAGE)}
+                          alt={prod.name}
+                          onError={(e) => { e.target.src = DEFAULT_CATEGORY_IMAGE; }}
+                          className="w-10 h-10 rounded-lg object-cover border border-[#D4B896]/40"
+                        />
                         <span className="font-semibold text-[#3A342E] max-w-xs truncate">{prod.name}</span>
                       </td>
                       <td className="py-3 px-4 font-mono">{prod.sku}</td>
@@ -1149,7 +1159,12 @@ const compressImageFile = (file) => {
                 <div className="flex items-center gap-2 pt-1">
                   {categoryForm.image && (
                     <div className="w-9 h-9 rounded-full overflow-hidden border border-[#D4B896] shrink-0 bg-stone-100 shadow-2xs">
-                      <img src={categoryForm.image} alt="" className="w-full h-full object-cover" />
+                      <img
+                        src={getImageUrl(categoryForm.image, DEFAULT_CATEGORY_IMAGE)}
+                        alt=""
+                        onError={(e) => { e.target.src = DEFAULT_CATEGORY_IMAGE; }}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                   )}
                   <input
@@ -1364,10 +1379,10 @@ const compressImageFile = (file) => {
                       <div className="w-10 h-10 rounded-lg overflow-hidden border border-[#D4B896]/50 bg-stone-100 shrink-0 flex items-center justify-center">
                         {imgUrl ? (
                           <img
-                            src={imgUrl}
+                            src={getImageUrl(imgUrl, DEFAULT_CATEGORY_IMAGE)}
                             alt=""
                             className="w-full h-full object-cover"
-                            onError={(e) => { e.target.style.display = 'none'; }}
+                            onError={(e) => { e.target.src = DEFAULT_CATEGORY_IMAGE; }}
                           />
                         ) : (
                           <ImageIcon className="w-4 h-4 text-stone-400" />
