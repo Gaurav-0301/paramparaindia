@@ -68,14 +68,14 @@ const Navbar = () => {
             <Link to="/" className="gold-thread-hover hover:text-[#9CAF97] transition-colors py-1">
               Home
             </Link>
-            <Link to="/shop?category=Rakhis" className="gold-thread-hover hover:text-[#9CAF97] transition-colors py-1">
-              Rakhis
+            <Link to="/shop?category=Special%20Collections" className="gold-thread-hover hover:text-[#9CAF97] transition-colors py-1">
+              Special Collections
             </Link>
             <Link to="/shop?category=Sweets" className="gold-thread-hover hover:text-[#9CAF97] transition-colors py-1">
-              Mithai
+              Sweets
             </Link>
             <Link to="/shop?category=Gifts" className="gold-thread-hover hover:text-[#9CAF97] transition-colors py-1">
-              Luxury Hampers
+              Gifts
             </Link>
             <Link to="/shop" className="gold-thread-hover hover:text-[#9CAF97] transition-colors py-1">
               All Collections
@@ -101,7 +101,7 @@ const Navbar = () => {
                 >
                   <input
                     type="text"
-                    placeholder="Search Rakhis, Hampers..."
+                    placeholder="Search Collections, Sweets, Gifts..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full px-2.5 py-1 text-xs bg-transparent focus:outline-none text-[#3A342E]"
@@ -163,25 +163,25 @@ const Navbar = () => {
               Home
             </Link>
             <Link
-              to="/shop?category=Rakhis"
+              to="/shop?category=Special%20Collections"
               onClick={() => setMobileMenuOpen(false)}
               className="block text-xs sm:text-sm uppercase tracking-widest font-semibold text-[#3A342E] hover:text-[#9CAF97]"
             >
-              Rakhis Catalog
+              Special Collections
             </Link>
             <Link
               to="/shop?category=Sweets"
               onClick={() => setMobileMenuOpen(false)}
               className="block text-xs sm:text-sm uppercase tracking-widest font-semibold text-[#3A342E] hover:text-[#9CAF97]"
             >
-              Mithai & Sweets
+              Sweets
             </Link>
             <Link
               to="/shop?category=Gifts"
               onClick={() => setMobileMenuOpen(false)}
               className="block text-xs sm:text-sm uppercase tracking-widest font-semibold text-[#3A342E] hover:text-[#9CAF97]"
             >
-              Luxury Hampers
+              Gifts
             </Link>
             <Link
               to="/shop"

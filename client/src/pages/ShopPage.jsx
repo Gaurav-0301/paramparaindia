@@ -7,23 +7,9 @@ import { useCatalog } from '../context/CatalogContext';
 import { getImageUrl, DEFAULT_CATEGORY_IMAGE } from '../utils/imageUrl';
 import axios from 'axios';
 
-const RAKHI_SUBCATEGORIES_ORDER = [
-  'Bracelet & Combo Rakhi',
-  'Designer & Pearl Rakhi',
-  'Premium Rakhi',
-  'Golden Rakhi',
-  'Flower Design Rakhi',
-  'Religious & Devotional Rakhi',
-  'Kids & Charm Rakhi',
-  'Peacock & Floral Rakhi',
-  'Personalized Rakhi',
-  'Rakhi Combo',
-  'Exclusive Rakhi Sets'
-];
-
 const ShopPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { products: catalogProducts, categories: catalogCategories, getSubcategoriesForCategory } = useCatalog();
+  const { products: catalogProducts, categories: catalogCategories, parentCategories, getSubcategoriesForCategory } = useCatalog();
 
   const currentCategory = searchParams.get('category') || 'All';
   const currentSubCategory = searchParams.get('subCategory') || '';
@@ -36,7 +22,8 @@ const ShopPage = () => {
   const [maxPrice, setMaxPrice] = useState('');
   const [viewMode, setViewMode] = useState('sections');
 
-  const categories = ['All', 'Rakhis', 'Sweets', 'Gifts', 'Combos'];
+  // Derive categories dynamically from database via parentCategories
+  const categories = ['All', ...(parentCategories && parentCategories.length > 0 ? parentCategories : ['Special Collections', 'Sweets', 'Gifts', 'Combos'])];
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -99,7 +86,7 @@ const ShopPage = () => {
   const rawSubcats = getSubcategoriesForCategory ? getSubcategoriesForCategory(currentCategory) : [];
   const subCategoryList = rawSubcats && rawSubcats.length > 0
     ? rawSubcats
-    : (catalogCategories && catalogCategories.length > 0 ? catalogCategories : RAKHI_SUBCATEGORIES_ORDER.map((name, idx) => ({ name, displayOrder: idx })));
+    : (catalogCategories || []);
 
   const groupedProducts = subCategoryList.map(catItem => {
     const subCatName = typeof catItem === 'string' ? catItem : catItem.name;

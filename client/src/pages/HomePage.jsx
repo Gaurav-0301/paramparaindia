@@ -178,12 +178,12 @@ const HomePage = () => {
           <RakhiCategoryBar
             onSelectSubCategory={(subCat) => {
               if (subCat) {
-                navigate(`/shop?category=Rakhis&subCategory=${encodeURIComponent(subCat)}`);
+                navigate(`/shop?category=Special%20Collections&subCategory=${encodeURIComponent(subCat)}`);
               } else {
-                navigate('/shop?category=Rakhis');
+                navigate('/shop?category=Special%20Collections');
               }
             }}
-            title="Browse All Rakhi Subcategories"
+            title="Browse All Subcategories"
           />
         </div>
       </section>
@@ -198,28 +198,28 @@ const HomePage = () => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
           {[
             {
-              title: 'Designer Rakhis',
-              count: '30+ Designs',
+              title: 'Special Collections',
+              count: 'Handcrafted Designs',
               image: resolveCategoryImage('Designer', 'https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?w=600&auto=format&fit=crop&q=80'),
-              link: '/shop?category=Rakhis'
+              link: '/shop?category=Special%20Collections'
             },
             {
-              title: 'Artisanal Mithai',
+              title: 'Artisanal Sweets',
               count: 'Freshly Prepared',
               image: resolveCategoryImage('Sweets', 'https://images.unsplash.com/photo-1582293041079-7814c2f12063?w=600&auto=format&fit=crop&q=80'),
               link: '/shop?category=Sweets'
             },
             {
-              title: 'Luxury Hampers',
-              count: 'Complete Combos',
+              title: 'Luxury Gifts',
+              count: 'Complete Hampers',
               image: resolveCategoryImage('Combo', 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=600&auto=format&fit=crop&q=80'),
               link: '/shop?category=Gifts'
             },
             {
-              title: '925 Silver Rakhis',
+              title: 'Gold & Silver Keepsakes',
               count: 'Pure Hallmark',
               image: resolveCategoryImage('Golden', 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600&auto=format&fit=crop&q=80'),
-              link: '/shop?category=Rakhis&subCategory=Silver+925'
+              link: '/shop?category=Special%20Collections'
             }
           ].map((cat, idx) => (
             <Link

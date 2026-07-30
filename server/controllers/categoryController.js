@@ -69,7 +69,7 @@ const createCategory = async (req, res) => {
     const category = new Category({
       name,
       slug,
-      parentCategory: parentCategory || 'Rakhis',
+      parentCategory: parentCategory || 'Special Collections',
       image: cleanedImage,
       description: description || '',
       displayOrder: displayOrder !== undefined ? Number(displayOrder) : 0,

@@ -12,7 +12,7 @@ import { getImageUrl, DEFAULT_CATEGORY_IMAGE } from '../utils/imageUrl';
 
 const AdminDashboardPage = () => {
   const { refetchFestival } = useFestival();
-  const { notifyCatalogChange } = useCatalog();
+  const { parentCategories, refetchCategories, refetchProducts, notifyCatalogChange } = useCatalog();
   const [activeTab, setActiveTab] = useState('analytics'); // analytics, orders, products, categories, coupons, reviews, festival
 
   // Analytics data
@@ -32,13 +32,13 @@ const AdminDashboardPage = () => {
   const [productForm, setProductForm] = useState({
     name: '',
     description: '',
-    category: 'Rakhis',
-    subCategory: 'Bracelet & Combo Rakhi',
+    category: 'Special Collections',
+    subCategory: '',
     price: '',
     mrp: '',
     availableQuantity: 50,
     sku: '',
-    badge: 'Rakhi Special',
+    badge: 'Special Collection',
     images: ['https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?w=800&auto=format&fit=crop&q=80']
   });
 
@@ -49,7 +49,7 @@ const AdminDashboardPage = () => {
   const [editingCategory, setEditingCategory] = useState(null);
   const [categoryForm, setCategoryForm] = useState({
     name: '',
-    parentCategory: 'Rakhis',
+    parentCategory: 'Special Collections',
     image: '',
     description: '',
     displayOrder: 0,
@@ -195,13 +195,14 @@ const AdminDashboardPage = () => {
 
   // Product Actions
   const handleOpenProductModal = (product = null) => {
+    const defaultParent = parentCategories?.[0] || 'Special Collections';
     if (product) {
       setEditingProduct(product);
       setProductForm({
         name: product.name,
         description: product.description,
-        category: product.category || 'Rakhis',
-        subCategory: product.subCategory || (adminCategories[0]?.name || 'Bracelet & Combo Rakhi'),
+        category: product.category || defaultParent,
+        subCategory: product.subCategory || (adminCategories[0]?.name || ''),
         price: product.price,
         mrp: product.mrp,
         availableQuantity: product.availableQuantity,
@@ -219,13 +220,13 @@ const AdminDashboardPage = () => {
       setProductForm({
         name: '',
         description: '',
-        category: 'Rakhis',
-        subCategory: adminCategories[0]?.name || 'Bracelet & Combo Rakhi',
+        category: defaultParent,
+        subCategory: adminCategories[0]?.name || '',
         price: '',
         mrp: '',
         availableQuantity: 50,
         sku: '',
-        badge: 'Rakhi Special',
+        badge: 'Special Collection',
         images: ['https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?w=800&auto=format&fit=crop&q=80'],
         isPersonalized: false,
         customizationLabel: 'Customization Text (7 Chr)',
@@ -318,6 +319,25 @@ const compressImageFile = (file) => {
 
     setUploadingImage(true);
 
+    // Instant visual preview using local blob URL
+    const previewUrls = rawFiles.map(f => URL.createObjectURL(f));
+    if (previewUrls.length > 0) {
+      setProductForm(prev => {
+        let updated = [...prev.images];
+        if (targetIndex !== null && targetIndex < updated.length) {
+          updated[targetIndex] = previewUrls[0];
+        } else {
+          const placeholderIdx = updated.findIndex(img => !img || img.trim() === '' || img.includes('unsplash.com'));
+          if (placeholderIdx !== -1) {
+            updated[placeholderIdx] = previewUrls[0];
+          } else {
+            updated.push(...previewUrls);
+          }
+        }
+        return { ...prev, images: updated.filter(Boolean) };
+      });
+    }
+
     try {
       const files = await Promise.all(rawFiles.map(f => compressImageFile(f)));
       if (files.length === 1) {
@@ -330,15 +350,11 @@ const compressImageFile = (file) => {
           const serverUrl = res.data.imageUrl;
           setProductForm(prev => {
             let updated = [...prev.images];
-            if (targetIndex !== null && targetIndex < updated.length) {
-              updated[targetIndex] = serverUrl;
+            const targetPos = targetIndex !== null ? targetIndex : updated.indexOf(previewUrls[0]);
+            if (targetPos !== -1 && targetPos < updated.length) {
+              updated[targetPos] = serverUrl;
             } else {
-              const placeholderIdx = updated.findIndex(img => !img || img.trim() === '' || img.includes('unsplash.com'));
-              if (placeholderIdx !== -1) {
-                updated[placeholderIdx] = serverUrl;
-              } else {
-                updated.push(serverUrl);
-              }
+              updated.push(serverUrl);
             }
             return { ...prev, images: updated.filter(Boolean) };
           });
@@ -358,22 +374,6 @@ const compressImageFile = (file) => {
       }
     } catch (err) {
       console.warn('Server upload fallback active:', err);
-      rawFiles.forEach((file, index) => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const dataUrl = event.target.result;
-          setProductForm(prev => {
-            let updated = [...prev.images];
-            if (targetIndex !== null && targetIndex < updated.length) {
-              updated[targetIndex] = dataUrl;
-            } else {
-              updated.push(dataUrl);
-            }
-            return { ...prev, images: updated.filter(Boolean) };
-          });
-        };
-        reader.readAsDataURL(file);
-      });
     } finally {
       if (e.target) e.target.value = '';
       setUploadingImage(false);
@@ -384,6 +384,9 @@ const compressImageFile = (file) => {
     const rawFile = e.target.files?.[0];
     if (!rawFile) return;
 
+    // Instant visual preview
+    const previewUrl = URL.createObjectURL(rawFile);
+    setCategoryForm(prev => ({ ...prev, image: previewUrl }));
     setUploadingImage(true);
 
     try {
@@ -398,11 +401,6 @@ const compressImageFile = (file) => {
       }
     } catch (err) {
       console.warn('Category upload fallback active:', err);
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setCategoryForm(prev => ({ ...prev, image: event.target.result }));
-      };
-      reader.readAsDataURL(rawFile);
     } finally {
       if (e.target) e.target.value = '';
       setUploadingImage(false);
@@ -419,14 +417,18 @@ const compressImageFile = (file) => {
       };
 
       if (editingProduct) {
-        await axios.put(`/api/products/admin/${editingProduct._id}`, payload);
+        const res = await axios.put(`/api/products/admin/${editingProduct._id}`, payload);
+        const updated = res.data.product || payload;
+        setAdminProducts(prev => prev.map(p => p._id === editingProduct._id ? { ...p, ...updated } : p));
       } else {
-        await axios.post('/api/products/admin/create', payload);
+        const res = await axios.post('/api/products/admin/create', payload);
+        if (res.data.product) {
+          setAdminProducts(prev => [res.data.product, ...prev]);
+        }
       }
       setShowProductModal(false);
       setEditingProduct(null);
-      fetchAdminProducts();
-      notifyCatalogChange();
+      if (refetchProducts) refetchProducts();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to save product');
     }
@@ -436,8 +438,8 @@ const compressImageFile = (file) => {
     if (!window.confirm('Delete product?')) return;
     try {
       await axios.delete(`/api/products/admin/${id}`);
-      fetchAdminProducts();
-      notifyCatalogChange();
+      setAdminProducts(prev => prev.filter(p => p._id !== id));
+      if (refetchProducts) refetchProducts();
     } catch (err) {
       alert('Failed to delete product');
     }
@@ -445,11 +447,12 @@ const compressImageFile = (file) => {
 
   // Category Actions
   const handleOpenCategoryModal = (cat = null) => {
+    const defaultParent = parentCategories?.[0] || 'Special Collections';
     if (cat) {
       setEditingCategory(cat);
       setCategoryForm({
         name: cat.name,
-        parentCategory: cat.parentCategory || 'Rakhis',
+        parentCategory: cat.parentCategory || defaultParent,
         image: cat.image,
         description: cat.description || '',
         displayOrder: cat.displayOrder || 0,
@@ -459,7 +462,7 @@ const compressImageFile = (file) => {
       setEditingCategory(null);
       setCategoryForm({
         name: '',
-        parentCategory: 'Rakhis',
+        parentCategory: defaultParent,
         image: 'https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?w=500&auto=format&fit=crop&q=80',
         description: '',
         displayOrder: adminCategories.length + 1,
@@ -473,14 +476,18 @@ const compressImageFile = (file) => {
     e.preventDefault();
     try {
       if (editingCategory) {
-        await axios.put(`/api/categories/admin/${editingCategory._id}`, categoryForm);
+        const res = await axios.put(`/api/categories/admin/${editingCategory._id}`, categoryForm);
+        const updatedCat = res.data.category || categoryForm;
+        setAdminCategories(prev => prev.map(c => c._id === editingCategory._id ? { ...c, ...updatedCat } : c));
       } else {
-        await axios.post('/api/categories/admin/create', categoryForm);
+        const res = await axios.post('/api/categories/admin/create', categoryForm);
+        if (res.data.category) {
+          setAdminCategories(prev => [...prev, res.data.category]);
+        }
       }
       setShowCategoryModal(false);
       setEditingCategory(null);
-      fetchAdminCategories();
-      notifyCatalogChange();
+      if (refetchCategories) refetchCategories();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to save category');
     }
@@ -490,8 +497,8 @@ const compressImageFile = (file) => {
     if (!window.confirm('Are you sure you want to delete this category?')) return;
     try {
       await axios.delete(`/api/categories/admin/${id}`);
-      fetchAdminCategories();
-      notifyCatalogChange();
+      setAdminCategories(prev => prev.filter(c => c._id !== id));
+      if (refetchCategories) refetchCategories();
     } catch (err) {
       alert('Failed to delete category');
     }
@@ -1159,16 +1166,20 @@ const compressImageFile = (file) => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold mb-1">Parent Category</label>
-                  <select
+                  <input
+                    type="text"
+                    list="parent-category-options"
+                    required
+                    placeholder="e.g. Special Collections"
                     value={categoryForm.parentCategory}
                     onChange={(e) => setCategoryForm({ ...categoryForm, parentCategory: e.target.value })}
                     className="w-full p-2.5 rounded-lg border border-[#D4B896]/50 bg-white font-semibold"
-                  >
-                    <option value="Rakhis">Rakhis</option>
-                    <option value="Sweets">Sweets</option>
-                    <option value="Gifts">Gifts</option>
-                    <option value="Combos">Combos</option>
-                  </select>
+                  />
+                  <datalist id="parent-category-options">
+                    {(parentCategories && parentCategories.length > 0 ? parentCategories : ['Special Collections', 'Sweets', 'Gifts', 'Combos']).map(p => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </datalist>
                 </div>
 
                 <div>
@@ -1236,16 +1247,20 @@ const compressImageFile = (file) => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold mb-1">Category</label>
-                  <select
+                  <input
+                    type="text"
+                    list="product-category-options"
+                    required
+                    placeholder="e.g. Special Collections"
                     value={productForm.category}
                     onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
                     className="w-full p-2.5 rounded-lg border border-[#D4B896]/50 bg-white font-semibold"
-                  >
-                    <option value="Rakhis">Rakhis</option>
-                    <option value="Sweets">Sweets</option>
-                    <option value="Gifts">Gifts</option>
-                    <option value="Combos">Combos</option>
-                  </select>
+                  />
+                  <datalist id="product-category-options">
+                    {(parentCategories && parentCategories.length > 0 ? parentCategories : ['Special Collections', 'Sweets', 'Gifts', 'Combos']).map(p => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </datalist>
                 </div>
 
                 <div>

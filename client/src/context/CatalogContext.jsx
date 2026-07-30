@@ -35,14 +35,31 @@ export const CatalogProvider = ({ children }) => {
     }
   }, []);
 
+  const parentCategories = React.useMemo(() => {
+    const fromCategories = categories.map(c => c.parentCategory).filter(Boolean);
+    const fromProducts = products.map(p => p.category).filter(Boolean);
+    const set = new Set([...fromCategories, ...fromProducts]);
+    const list = Array.from(set).map(cat => (cat.toLowerCase() === 'rakhis' ? 'Special Collections' : cat));
+    const unique = Array.from(new Set(list));
+    return unique.length > 0 ? unique : ['Special Collections', 'Sweets', 'Gifts', 'Combos'];
+  }, [categories, products]);
+
   const getSubcategoriesForCategory = useCallback((parentCategory) => {
     if (!parentCategory || parentCategory === 'All') {
       return categories;
     }
-    return categories.filter(cat =>
-      (cat.parentCategory && cat.parentCategory.toLowerCase() === parentCategory.toLowerCase()) ||
-      (!cat.parentCategory && parentCategory.toLowerCase() === 'rakhis')
-    );
+    const target = parentCategory.toLowerCase();
+    return categories.filter(cat => {
+      const p = (cat.parentCategory || '').toLowerCase();
+      if (p === target) return true;
+      if (
+        (target === 'rakhis' || target === 'special collections') &&
+        (p === 'rakhis' || p === 'special collections' || !p)
+      ) {
+        return true;
+      }
+      return false;
+    });
   }, [categories]);
 
   useEffect(() => {
@@ -78,6 +95,7 @@ export const CatalogProvider = ({ children }) => {
         setProducts,
         categories,
         setCategories,
+        parentCategories,
         loadingProducts,
         loadingCategories,
         refetchProducts: fetchProducts,

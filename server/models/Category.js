@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const categorySchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   slug: { type: String, required: true, unique: true, lowercase: true },
-  parentCategory: { type: String, default: 'Rakhis' },
+  parentCategory: { type: String, default: 'Special Collections' },
   image: { type: String, required: true },
   description: { type: String, default: '' },
   displayOrder: { type: Number, default: 0 },
