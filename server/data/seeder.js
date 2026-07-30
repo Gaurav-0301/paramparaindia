@@ -16,14 +16,15 @@ const seedDB = async () => {
     await mongoose.connect(mongoUri);
     console.log('Connected to MongoDB for Seeding...');
 
-    // Seed Categories ONLY if collection is completely empty to preserve user edits
-    const categoryCount = await Category.countDocuments();
-    if (categoryCount === 0) {
-      await Category.insertMany(seedCategories);
-      console.log(`Successfully seeded all ${seedCategories.length} default Rakhi Subcategories!`);
-    } else {
-      console.log(`Categories collection already has ${categoryCount} subcategories. Preserving user data.`);
+    // Seed default categories if missing (upsert by slug to preserve user edits)
+    for (const cat of seedCategories) {
+      await Category.updateOne(
+        { slug: cat.slug },
+        { $setOnInsert: cat },
+        { upsert: true }
+      );
     }
+    console.log('Categories synced with database!');
 
     // Seed products ONLY if collection is completely empty to preserve user edits
     const productCount = await Product.countDocuments();

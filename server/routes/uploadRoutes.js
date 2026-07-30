@@ -65,12 +65,18 @@ const processImageBuffer = async (buffer, originalname, mimeType = null) => {
     }, 5000);
 
     try {
+      const uploadOptions = {
+        folder: 'parampara_catalog',
+        resource_type: 'auto'
+      };
+
+      // Only add image optimization transformations for standard raster image formats
+      if (['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) {
+        uploadOptions.transformation = [{ width: 1200, crop: 'limit', quality: 'auto', fetch_format: 'auto' }];
+      }
+
       const uploadStream = cloudinary.uploader.upload_stream(
-        {
-          folder: 'parampara_catalog',
-          resource_type: 'auto',
-          transformation: [{ width: 1200, crop: 'limit', quality: 'auto', fetch_format: 'auto' }]
-        },
+        uploadOptions,
         (error, result) => {
           clearTimeout(timeoutTimer);
           if (!resolved) {

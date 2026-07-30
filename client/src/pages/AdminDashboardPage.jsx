@@ -358,13 +358,13 @@ const compressImageFile = (file) => {
       }
     } catch (err) {
       console.warn('Server upload fallback active:', err);
-      files.forEach((file, index) => {
+      rawFiles.forEach((file, index) => {
         const reader = new FileReader();
         reader.onload = (event) => {
           const dataUrl = event.target.result;
           setProductForm(prev => {
             let updated = [...prev.images];
-            if (targetIndex !== null) {
+            if (targetIndex !== null && targetIndex < updated.length) {
               updated[targetIndex] = dataUrl;
             } else {
               updated.push(dataUrl);
@@ -674,7 +674,7 @@ const compressImageFile = (file) => {
       <div className="flex items-center gap-2 border-b border-[#EFE6D8] overflow-x-auto pb-2">
         {[
           { id: 'analytics', label: 'Analytics Dashboard', icon: LayoutDashboard },
-          { id: 'categories', label: 'Rakhi Subcategories', icon: Layers },
+          { id: 'categories', label: 'Subcategories', icon: Layers },
           { id: 'products', label: 'Catalog Manager', icon: ShoppingBag },
           { id: 'orders', label: 'Order Fulfillment', icon: Package },
           { id: 'coupons', label: 'Coupons & Discounts', icon: Tag },
@@ -746,10 +746,10 @@ const compressImageFile = (file) => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="font-serif-display text-xl font-semibold text-[#3A342E] flex items-center gap-2">
-                <Layers className="w-5 h-5 text-[#D4B896]" /> Rakhi Subcategories Management
+                <Layers className="w-5 h-5 text-[#D4B896]" /> Catalog Subcategories Management
               </h2>
               <p className="text-xs text-[#3A342E]/70 mt-1">
-                Manage the circular avatar subcategories displayed on the frontend header, homepage, and shop catalog.
+                Manage the circular avatar subcategories across all main categories (Rakhis, Sweets, Gifts, Combos) for header, homepage, and shop catalog.
               </p>
             </div>
             <button
@@ -791,10 +791,14 @@ const compressImageFile = (file) => {
 
                   <div className="flex-1 min-w-0 pr-12">
                     <h3 className="font-serif-display font-semibold text-sm text-[#3A342E] truncate">{cat.name}</h3>
-                    <p className="text-[11px] text-[#9CAF97] font-semibold">Order: #{cat.displayOrder || 0}</p>
-                    <span className={`inline-block text-[9px] uppercase font-bold px-2 py-0.5 rounded-full mt-1 ${cat.isActive ? 'bg-[#9CAF97]/20 text-[#9CAF97]' : 'bg-stone-200 text-stone-600'}`}>
-                      {cat.isActive ? 'Active' : 'Disabled'}
-                    </span>
+                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-[#3A342E]">
+                        {cat.parentCategory || 'Rakhis'}
+                      </span>
+                      <span className={`inline-block text-[9px] uppercase font-bold px-2 py-0.5 rounded-full ${cat.isActive ? 'bg-[#9CAF97]/20 text-[#9CAF97]' : 'bg-stone-200 text-stone-600'}`}>
+                        {cat.isActive ? 'Active' : 'Disabled'}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Actions */}
@@ -1473,6 +1477,113 @@ const compressImageFile = (file) => {
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setShowProductModal(false)} className="px-4 py-2 uppercase font-semibold">Cancel</button>
                 <button type="submit" className="px-6 py-2 bg-[#3A342E] text-white uppercase font-semibold rounded-lg">Save Product</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      {/* Category / Subcategory Modal */}
+      {showCategoryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div onClick={() => setShowCategoryModal(false)} className="absolute inset-0 bg-[#3A342E]/40 backdrop-blur-xs"></div>
+          <div className="relative w-full max-w-lg glass-modal rounded-2xl p-6 shadow-2xl border border-[#D4B896]/50 space-y-4 max-h-[90vh] overflow-y-auto">
+            <h3 className="font-serif-display text-xl font-semibold text-[#3A342E]">
+              {editingCategory ? 'Edit Subcategory' : 'Create New Subcategory'}
+            </h3>
+            <form onSubmit={handleSaveCategory} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-semibold mb-1 text-[#3A342E]">Subcategory Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Designer & Pearl Rakhi, Kaju Katli Box"
+                  value={categoryForm.name}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
+                  className="w-full p-2.5 rounded-lg border border-[#D4B896]/50 bg-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold mb-1 text-[#3A342E]">Main Parent Category *</label>
+                  <select
+                    value={categoryForm.parentCategory}
+                    onChange={(e) => setCategoryForm({ ...categoryForm, parentCategory: e.target.value })}
+                    className="w-full p-2.5 rounded-lg border border-[#D4B896]/50 bg-white font-semibold"
+                  >
+                    <option value="Rakhis">Rakhis</option>
+                    <option value="Sweets">Sweets</option>
+                    <option value="Gifts">Gifts</option>
+                    <option value="Combos">Combos</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-semibold mb-1 text-[#3A342E]">Display Order #</label>
+                  <input
+                    type="number"
+                    value={categoryForm.displayOrder}
+                    onChange={(e) => setCategoryForm({ ...categoryForm, displayOrder: Number(e.target.value) })}
+                    className="w-full p-2.5 rounded-lg border border-[#D4B896]/50 bg-white"
+                  />
+                </div>
+              </div>
+
+              {/* Image Upload & Input */}
+              <div className="p-3 bg-[#FAF7F2] rounded-xl border border-[#D4B896]/50 space-y-2">
+                <label className="block font-bold text-[#3A342E]">Subcategory Avatar Image *</label>
+                <div className="bg-white p-2 rounded-lg border border-[#D4B896]/40 space-y-1">
+                  <span className="block text-[10px] font-semibold text-[#3A342E]">📁 Select Image From File Manager:</span>
+                  <input
+                    type="file"
+                    accept="image/*,.heic,.heif,.avif,.webp,.png,.jpg,.jpeg,.gif,.svg,.bmp"
+                    onChange={handleCategoryFileUpload}
+                    className="block w-full text-[11px] text-[#3A342E] file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:font-semibold file:bg-[#3A342E] file:text-white hover:file:bg-[#9CAF97] cursor-pointer"
+                  />
+                </div>
+                <div className="flex items-center gap-3 pt-1">
+                  {categoryForm.image && (
+                    <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#D4B896] shrink-0 bg-stone-100 shadow-2xs">
+                      <img src={categoryForm.image} alt="" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <input
+                    type="text"
+                    required
+                    placeholder="Image URL or Base64 Data"
+                    value={categoryForm.image}
+                    onChange={(e) => setCategoryForm({ ...categoryForm, image: e.target.value })}
+                    className="flex-1 p-2 rounded-lg border border-[#D4B896]/50 bg-white font-mono text-[11px]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1 text-[#3A342E]">Description</label>
+                <textarea
+                  rows={2}
+                  placeholder="Short description of this subcategory..."
+                  value={categoryForm.description}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
+                  className="w-full p-2.5 rounded-lg border border-[#D4B896]/50 bg-white"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="catActiveCheck"
+                  checked={categoryForm.isActive}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, isActive: e.target.checked })}
+                  className="w-4 h-4 accent-[#9CAF97]"
+                />
+                <label htmlFor="catActiveCheck" className="text-xs font-semibold text-[#3A342E] cursor-pointer">
+                  Active in Catalog & Header
+                </label>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setShowCategoryModal(false)} className="px-4 py-2 uppercase font-semibold">Cancel</button>
+                <button type="submit" className="px-6 py-2 bg-[#3A342E] text-white uppercase font-semibold rounded-lg">Save Subcategory</button>
               </div>
             </form>
           </div>

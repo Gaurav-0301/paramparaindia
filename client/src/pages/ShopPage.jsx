@@ -23,7 +23,7 @@ const RAKHI_SUBCATEGORIES_ORDER = [
 
 const ShopPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { products: catalogProducts, categories: catalogCategories, loadingProducts } = useCatalog();
+  const { products: catalogProducts, categories: catalogCategories, getSubcategoriesForCategory } = useCatalog();
 
   const currentCategory = searchParams.get('category') || 'All';
   const currentSubCategory = searchParams.get('subCategory') || '';
@@ -51,28 +51,22 @@ const ShopPage = () => {
       const res = await axios.get(url);
       setProducts(res.data.products || []);
     } catch (err) {
-      console.error('Failed to fetch catalog products:', err);
+      console.error('Failed to fetch products:', err);
     } finally {
       setLoading(false);
     }
   }, [currentCategory, currentSubCategory, currentSort, currentSearch, minPrice, maxPrice]);
 
   useEffect(() => {
-    if (!minPrice && !maxPrice) {
-      setProducts(catalogProducts);
-    }
-  }, [catalogProducts, minPrice, maxPrice]);
-
-  useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
 
-  const handleCategoryChange = (cat) => {
+  const handleCategoryChange = (categoryName) => {
     const params = new URLSearchParams(searchParams);
-    if (cat === 'All') {
+    if (categoryName === 'All') {
       params.delete('category');
     } else {
-      params.set('category', cat);
+      params.set('category', categoryName);
     }
     params.delete('subCategory');
     setSearchParams(params);
@@ -82,9 +76,6 @@ const ShopPage = () => {
     const params = new URLSearchParams(searchParams);
     if (subCat) {
       params.set('subCategory', subCat);
-      if (currentCategory === 'All') {
-        params.set('category', 'Rakhis');
-      }
     } else {
       params.delete('subCategory');
     }
@@ -102,12 +93,13 @@ const ShopPage = () => {
     fetchProducts();
   };
 
-  // Group products dynamically by subcategory using live catalogCategories from backend/admin panel
-  const isRakhiSectionView = (currentCategory === 'Rakhis' || currentCategory === 'All') && !currentSubCategory && !currentSearch && viewMode === 'sections';
+  // Enable subcategory section view across ALL main categories
+  const isSectionView = !currentSubCategory && !currentSearch && viewMode === 'sections';
 
-  const subCategoryList = catalogCategories && catalogCategories.length > 0
-    ? catalogCategories
-    : RAKHI_SUBCATEGORIES_ORDER.map((name, idx) => ({ name, displayOrder: idx }));
+  const rawSubcats = getSubcategoriesForCategory ? getSubcategoriesForCategory(currentCategory) : [];
+  const subCategoryList = rawSubcats && rawSubcats.length > 0
+    ? rawSubcats
+    : (catalogCategories && catalogCategories.length > 0 ? catalogCategories : RAKHI_SUBCATEGORIES_ORDER.map((name, idx) => ({ name, displayOrder: idx })));
 
   const groupedProducts = subCategoryList.map(catItem => {
     const subCatName = typeof catItem === 'string' ? catItem : catItem.name;
@@ -116,11 +108,11 @@ const ShopPage = () => {
       : 'https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?w=500&auto=format&fit=crop&q=80';
     const catDescription = (typeof catItem === 'object' && catItem.description)
       ? catItem.description
-      : `Handcrafted ${subCatName} collection for Raksha Bandhan.`;
+      : `Handcrafted ${subCatName} collection for ${currentCategory === 'All' ? 'Parampara India' : currentCategory}.`;
 
     const matchingProducts = products.filter(p =>
       p.subCategory === subCatName ||
-      (p.category === 'Rakhis' && p.subCategory?.toLowerCase() === subCatName.toLowerCase())
+      p.subCategory?.toLowerCase() === subCatName.toLowerCase()
     );
 
     return {
@@ -129,7 +121,7 @@ const ShopPage = () => {
       description: catDescription,
       products: matchingProducts
     };
-  }).filter(group => group.products.length > 0 || catalogCategories.some(c => c.name === group.subCategoryName));
+  }).filter(group => group.products.length > 0 || (rawSubcats && rawSubcats.some(c => c.name === group.subCategoryName)));
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 sm:space-y-8">
@@ -171,16 +163,14 @@ const ShopPage = () => {
         ))}
       </div>
 
-      {/* Rakhi Circular Subcategories Header Bar (rendered when category is Rakhis or All) */}
-      {(currentCategory === 'Rakhis' || currentCategory === 'All') && (
-        <div className="glass-panel p-2 sm:p-4 rounded-2xl border border-[#D4B896]/40 shadow-xs">
-          <RakhiCategoryBar
-            activeSubCategory={currentSubCategory}
-            onSelectSubCategory={handleSubCategorySelect}
-            title={currentCategory === 'Rakhis' ? "Shop Rakhis by Category" : "Explore Rakhi Subcategories"}
-          />
-        </div>
-      )}
+      {/* Circular Subcategories Header Bar (rendered for all main categories) */}
+      <div className="glass-panel p-2 sm:p-4 rounded-2xl border border-[#D4B896]/40 shadow-xs">
+        <RakhiCategoryBar
+          activeSubCategory={currentSubCategory}
+          onSelectSubCategory={handleSubCategorySelect}
+          currentCategory={currentCategory}
+        />
+      </div>
 
       {/* Filter, Sort & View Mode Switcher Bar */}
       <div className="glass-panel p-4 rounded-2xl border border-[#D4B896]/40 flex flex-col md:flex-row items-center justify-between gap-4">
@@ -216,7 +206,7 @@ const ShopPage = () => {
         <div className="flex items-center gap-4 text-xs flex-wrap">
           
           {/* Layout Toggle (Subcategory Sections vs Grid) */}
-          {(currentCategory === 'Rakhis' || currentCategory === 'All') && !currentSubCategory && (
+          {!currentSubCategory && (
             <div className="flex items-center bg-white/80 p-1 rounded-xl border border-[#D4B896]/40">
               <button
                 onClick={() => setViewMode('sections')}
@@ -272,11 +262,11 @@ const ShopPage = () => {
               onClick={() => handleSubCategorySelect('')}
               className="mt-2 px-4 py-2 bg-[#3A342E] text-white text-xs uppercase rounded-lg font-semibold"
             >
-              View All Rakhis
+              View All {currentCategory === 'All' ? 'Products' : currentCategory}
             </button>
           )}
         </div>
-      ) : isRakhiSectionView ? (
+      ) : isSectionView ? (
         /* DEDICATED SECTIONS FOR EACH SUBCATEGORY UNDER RAKHIS */
         <div className="space-y-12 py-4">
           {groupedProducts.map(group => {

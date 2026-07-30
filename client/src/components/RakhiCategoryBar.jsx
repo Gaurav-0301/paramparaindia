@@ -3,25 +3,47 @@ import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { getImageUrl, DEFAULT_CATEGORY_IMAGE } from '../utils/imageUrl';
 import { useCatalog } from '../context/CatalogContext';
 
-const FALLBACK_CATEGORIES = [
-  { name: 'Bracelet & Combo Rakhi', image: 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?w=500&auto=format&fit=crop&q=80' },
-  { name: 'Designer & Pearl Rakhi', image: 'https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?w=500&auto=format&fit=crop&q=80' },
-  { name: 'Premium Rakhi', image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=500&auto=format&fit=crop&q=80' },
-  { name: 'Golden Rakhi', image: 'https://images.unsplash.com/photo-1611591475140-be3e72a2034c?w=500&auto=format&fit=crop&q=80' },
-  { name: 'Flower Design Rakhi', image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=500&auto=format&fit=crop&q=80' },
-  { name: 'Religious & Devotional Rakhi', image: 'https://images.unsplash.com/photo-1567157577867-05ccb1388e66?w=500&auto=format&fit=crop&q=80' },
-  { name: 'Kids & Charm Rakhi', image: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=500&auto=format&fit=crop&q=80' },
-  { name: 'Peacock & Floral Rakhi', image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&auto=format&fit=crop&q=80' },
-  { name: 'Personalized Rakhi', image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=500&auto=format&fit=crop&q=80' },
-  { name: 'Rakhi Combo', image: 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=500&auto=format&fit=crop&q=80' },
-  { name: 'Exclusive Rakhi Sets', image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=500&auto=format&fit=crop&q=80' }
-];
+const FALLBACK_SUBCATEGORIES_BY_PARENT = {
+  Rakhis: [
+    { name: 'Bracelet & Combo Rakhi', image: 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?w=500&auto=format&fit=crop&q=80' },
+    { name: 'Designer & Pearl Rakhi', image: 'https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?w=500&auto=format&fit=crop&q=80' },
+    { name: 'Premium Rakhi', image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=500&auto=format&fit=crop&q=80' },
+    { name: 'Golden Rakhi', image: 'https://images.unsplash.com/photo-1611591475140-be3e72a2034c?w=500&auto=format&fit=crop&q=80' },
+    { name: 'Flower Design Rakhi', image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=500&auto=format&fit=crop&q=80' },
+    { name: 'Religious & Devotional Rakhi', image: 'https://images.unsplash.com/photo-1567157577867-05ccb1388e66?w=500&auto=format&fit=crop&q=80' },
+    { name: 'Kids & Charm Rakhi', image: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=500&auto=format&fit=crop&q=80' },
+    { name: 'Peacock & Floral Rakhi', image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&auto=format&fit=crop&q=80' },
+    { name: 'Personalized Rakhi', image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=500&auto=format&fit=crop&q=80' },
+    { name: 'Rakhi Combo', image: 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=500&auto=format&fit=crop&q=80' },
+    { name: 'Exclusive Rakhi Sets', image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=500&auto=format&fit=crop&q=80' }
+  ],
+  Sweets: [
+    { name: 'Assorted Mithai Box', image: 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=500&auto=format&fit=crop&q=80' },
+    { name: 'Kaju Katli & Dry Fruit', image: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=500&auto=format&fit=crop&q=80' },
+    { name: 'Motichoor & Besan Ladoo', image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=500&auto=format&fit=crop&q=80' },
+    { name: 'Traditional Soan Papdi', image: 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=500&auto=format&fit=crop&q=80' }
+  ],
+  Gifts: [
+    { name: 'Luxury Gift Hampers', image: 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=500&auto=format&fit=crop&q=80' },
+    { name: 'Personalized Accessories', image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=500&auto=format&fit=crop&q=80' },
+    { name: 'Silver & Brass Pooja Coins', image: 'https://images.unsplash.com/photo-1611591475140-be3e72a2034c?w=500&auto=format&fit=crop&q=80' }
+  ],
+  Combos: [
+    { name: 'Grand Rakhi & Sweets Combo', image: 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?w=500&auto=format&fit=crop&q=80' },
+    { name: 'Premium Rakhi & Dry Fruits Box', image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=500&auto=format&fit=crop&q=80' },
+    { name: 'Family Rakhi & Gift Set', image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=500&auto=format&fit=crop&q=80' }
+  ]
+};
 
-const RakhiCategoryBar = ({ activeSubCategory, onSelectSubCategory, title = "Explore Rakhi Categories" }) => {
-  const { categories: catalogCategories } = useCatalog();
+const RakhiCategoryBar = ({ activeSubCategory, onSelectSubCategory, currentCategory = 'Rakhis', title }) => {
+  const { categories: catalogCategories, getSubcategoriesForCategory } = useCatalog();
   const scrollContainerRef = useRef(null);
 
-  const categories = catalogCategories && catalogCategories.length > 0 ? catalogCategories : FALLBACK_CATEGORIES;
+  const activeSubcats = getSubcategoriesForCategory ? getSubcategoriesForCategory(currentCategory) : [];
+  const fallbacks = FALLBACK_SUBCATEGORIES_BY_PARENT[currentCategory] || FALLBACK_SUBCATEGORIES_BY_PARENT['Rakhis'];
+  
+  const categories = activeSubcats && activeSubcats.length > 0 ? activeSubcats : fallbacks;
+  const displayTitle = title || (currentCategory === 'All' ? 'Explore All Subcategories' : `Explore ${currentCategory} Subcategories`);
 
   const handleScroll = (direction) => {
     if (scrollContainerRef.current) {
@@ -33,13 +55,13 @@ const RakhiCategoryBar = ({ activeSubCategory, onSelectSubCategory, title = "Exp
   return (
     <div className="w-full py-4 sm:py-6 relative">
       
-      {/* Header Label if title provided */}
-      {title && (
+      {/* Header Label */}
+      {displayTitle && (
         <div className="flex items-center justify-between px-2 mb-3 sm:mb-4">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-[#D4B896]" />
             <h3 className="font-serif-display text-lg sm:text-xl font-semibold text-[#3A342E]">
-              {title}
+              {displayTitle}
             </h3>
           </div>
           {activeSubCategory && (

@@ -86,6 +86,89 @@ const seedCategories = [
     image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=500&auto=format&fit=crop&q=80',
     description: 'Sets of 2, 3, or 5 matching thread rakhis for all brothers.',
     displayOrder: 11
+  },
+  // Sweets Subcategories
+  {
+    name: 'Assorted Mithai Box',
+    slug: 'assorted-mithai-box',
+    parentCategory: 'Sweets',
+    image: 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=500&auto=format&fit=crop&q=80',
+    description: 'Handcrafted traditional Indian sweets prepared with pure desi ghee.',
+    displayOrder: 1
+  },
+  {
+    name: 'Kaju Katli & Dry Fruit',
+    slug: 'kaju-katli-dry-fruit',
+    parentCategory: 'Sweets',
+    image: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=500&auto=format&fit=crop&q=80',
+    description: 'Premium cashew kaju katli silver leaves paired with roasted dry fruits.',
+    displayOrder: 2
+  },
+  {
+    name: 'Motichoor & Besan Ladoo',
+    slug: 'motichoor-besan-ladoo',
+    parentCategory: 'Sweets',
+    image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=500&auto=format&fit=crop&q=80',
+    description: 'Aromatic saffron motichoor and pure ghee besan ladoos.',
+    displayOrder: 3
+  },
+  {
+    name: 'Traditional Soan Papdi',
+    slug: 'traditional-soan-papdi',
+    parentCategory: 'Sweets',
+    image: 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=500&auto=format&fit=crop&q=80',
+    description: 'Flaky pistachio and cardamom infused traditional soan papdi.',
+    displayOrder: 4
+  },
+  // Gifts Subcategories
+  {
+    name: 'Luxury Gift Hampers',
+    slug: 'luxury-gift-hampers',
+    parentCategory: 'Gifts',
+    image: 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=500&auto=format&fit=crop&q=80',
+    description: 'Curated gift hampers featuring personalized items and festive treats.',
+    displayOrder: 1
+  },
+  {
+    name: 'Personalized Accessories',
+    slug: 'personalized-accessories',
+    parentCategory: 'Gifts',
+    image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=500&auto=format&fit=crop&q=80',
+    description: 'Custom name engraved wallets, mugs, keys, and keepsakes.',
+    displayOrder: 2
+  },
+  {
+    name: 'Silver & Brass Pooja Coins',
+    slug: 'silver-brass-pooja-coins',
+    parentCategory: 'Gifts',
+    image: 'https://images.unsplash.com/photo-1611591475140-be3e72a2034c?w=500&auto=format&fit=crop&q=80',
+    description: '925 sterling silver and auspicious Lakshmi-Ganesha coins.',
+    displayOrder: 3
+  },
+  // Combos Subcategories
+  {
+    name: 'Grand Rakhi & Sweets Combo',
+    slug: 'grand-rakhi-sweets-combo',
+    parentCategory: 'Combos',
+    image: 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?w=500&auto=format&fit=crop&q=80',
+    description: 'Complete festive celebration box with Rakhi, Roli Chawal and Sweets.',
+    displayOrder: 1
+  },
+  {
+    name: 'Premium Rakhi & Dry Fruits Box',
+    slug: 'premium-rakhi-dry-fruits-box',
+    parentCategory: 'Combos',
+    image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=500&auto=format&fit=crop&q=80',
+    description: 'Artisan Rakhi presented with roasted almonds, cashews & raisins.',
+    displayOrder: 2
+  },
+  {
+    name: 'Family Rakhi & Gift Set',
+    slug: 'family-rakhi-gift-set',
+    parentCategory: 'Combos',
+    image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=500&auto=format&fit=crop&q=80',
+    description: 'Sets for Bhaiya Bhabhi & kids paired with customized gifts.',
+    displayOrder: 3
   }
 ];
 

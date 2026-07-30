@@ -10,11 +10,25 @@ export const getImageUrl = (url, fallback = DEFAULT_PRODUCT_IMAGE) => {
   if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://') || cleanUrl.startsWith('data:image/')) {
     return cleanUrl;
   }
+
+  // Get base API URL from environment variable or fallback to localhost server
+  const rawApiUrl = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL
+    ? import.meta.env.VITE_API_URL
+    : '';
+  
+  let baseURL = '';
+  if (rawApiUrl) {
+    baseURL = rawApiUrl.replace(/\/api\/?$/, '');
+  } else if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    baseURL = 'http://localhost:5000';
+  }
+
   if (cleanUrl.startsWith('/uploads/')) {
-    return cleanUrl;
+    return baseURL ? `${baseURL}${cleanUrl}` : cleanUrl;
   }
   if (cleanUrl.startsWith('uploads/')) {
-    return `/${cleanUrl}`;
+    return baseURL ? `${baseURL}/${cleanUrl}` : `/${cleanUrl}`;
   }
   return cleanUrl;
 };
+

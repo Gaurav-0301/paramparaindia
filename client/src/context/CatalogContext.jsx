@@ -24,7 +24,7 @@ export const CatalogProvider = ({ children }) => {
 
   const fetchCategories = useCallback(async () => {
     try {
-      const res = await axios.get(`/api/categories?parentCategory=Rakhis&_t=${Date.now()}`);
+      const res = await axios.get(`/api/categories?_t=${Date.now()}`);
       if (res.data && res.data.categories) {
         setCategories(res.data.categories);
       }
@@ -34,6 +34,16 @@ export const CatalogProvider = ({ children }) => {
       setLoadingCategories(false);
     }
   }, []);
+
+  const getSubcategoriesForCategory = useCallback((parentCategory) => {
+    if (!parentCategory || parentCategory === 'All') {
+      return categories;
+    }
+    return categories.filter(cat =>
+      (cat.parentCategory && cat.parentCategory.toLowerCase() === parentCategory.toLowerCase()) ||
+      (!cat.parentCategory && parentCategory.toLowerCase() === 'rakhis')
+    );
+  }, [categories]);
 
   useEffect(() => {
     fetchProducts();
@@ -72,6 +82,7 @@ export const CatalogProvider = ({ children }) => {
         loadingCategories,
         refetchProducts: fetchProducts,
         refetchCategories: fetchCategories,
+        getSubcategoriesForCategory,
         notifyCatalogChange
       }}
     >

@@ -26,6 +26,7 @@ const productSchema = new mongoose.Schema({
   customizationInstruction: { type: String, default: 'Type in a Word that You Would Like To Be Engraved onto Your Product (Only 7 Character)' }
 }, { timestamps: true });
 
+productSchema.index({ category: 1, subCategory: 1, price: 1 });
 productSchema.index({ name: 'text', description: 'text', category: 'text' });
 
 module.exports = mongoose.model('Product', productSchema);
