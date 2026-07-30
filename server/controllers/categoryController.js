@@ -141,10 +141,37 @@ const deleteCategory = async (req, res) => {
   }
 };
 
+// @desc Rename Main Category across all subcategories & products (Admin Only)
+// @route PUT /api/categories/admin/main-category/rename
+const renameMainCategory = async (req, res) => {
+  try {
+    const { oldName, newName } = req.body;
+    if (!oldName || !newName) {
+      return res.status(400).json({ message: 'Both oldName and newName are required' });
+    }
+
+    await Category.updateMany(
+      { parentCategory: oldName },
+      { $set: { parentCategory: newName } }
+    );
+
+    const Product = require('../models/Product');
+    await Product.updateMany(
+      { category: oldName },
+      { $set: { category: newName } }
+    );
+
+    res.status(200).json({ success: true, message: `Renamed main category from "${oldName}" to "${newName}"` });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getCategories,
   getCategoryByIdentifier,
   createCategory,
   updateCategory,
-  deleteCategory
+  deleteCategory,
+  renameMainCategory
 };

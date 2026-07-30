@@ -3,7 +3,7 @@ import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
 } from 'recharts';
 import {
-  LayoutDashboard, ShoppingBag, Package, Tag, MessageSquare, Download, Plus, Edit, Trash2, CheckCircle, RefreshCw, Crown, Sparkles, Layers, Image as ImageIcon
+  LayoutDashboard, ShoppingBag, Package, Tag, MessageSquare, Download, Plus, Edit, Trash2, CheckCircle, RefreshCw, Crown, Sparkles, Layers, FolderTree, Search, Image as ImageIcon
 } from 'lucide-react';
 import axios from 'axios';
 import { useFestival } from '../context/FestivalContext';
@@ -13,7 +13,7 @@ import { getImageUrl, DEFAULT_CATEGORY_IMAGE } from '../utils/imageUrl';
 const AdminDashboardPage = () => {
   const { refetchFestival } = useFestival();
   const { parentCategories, refetchCategories, refetchProducts, notifyCatalogChange } = useCatalog();
-  const [activeTab, setActiveTab] = useState('analytics'); // analytics, orders, products, categories, coupons, reviews, festival
+  const [activeTab, setActiveTab] = useState('analytics'); // analytics, main-categories, subcategories, orders, products, coupons, reviews, festival
 
   // Analytics data
   const [analytics, setAnalytics] = useState(null);
@@ -55,6 +55,13 @@ const AdminDashboardPage = () => {
     displayOrder: 0,
     isActive: true
   });
+
+  // Main Categories & Subcategories Filter States
+  const [selectedSubcatMainFilter, setSelectedSubcatMainFilter] = useState('All');
+  const [subcatSearchQuery, setSubcatSearchQuery] = useState('');
+  const [showMainCategoryModal, setShowMainCategoryModal] = useState(false);
+  const [editingMainCategory, setEditingMainCategory] = useState(null);
+  const [mainCategoryForm, setMainCategoryForm] = useState({ oldName: '', name: '' });
 
   // Coupons data
   const [coupons, setCoupons] = useState([]);
@@ -504,6 +511,47 @@ const compressImageFile = (file) => {
     }
   };
 
+  // Main Category Actions
+  const handleOpenMainCategoryModal = (mainCatName = null) => {
+    if (mainCatName) {
+      setEditingMainCategory(mainCatName);
+      setMainCategoryForm({ oldName: mainCatName, name: mainCatName });
+    } else {
+      setEditingMainCategory(null);
+      setMainCategoryForm({ oldName: '', name: '' });
+    }
+    setShowMainCategoryModal(true);
+  };
+
+  const handleSaveMainCategory = async (e) => {
+    e.preventDefault();
+    const newName = mainCategoryForm.name.trim();
+    if (!newName) return;
+    try {
+      if (editingMainCategory) {
+        await axios.put('/api/categories/admin/main-category/rename', {
+          oldName: editingMainCategory,
+          newName
+        });
+      } else {
+        await axios.post('/api/categories/admin/create', {
+          name: `${newName} Collection`,
+          parentCategory: newName,
+          image: DEFAULT_CATEGORY_IMAGE,
+          description: `Main category collection for ${newName}`
+        });
+      }
+      setShowMainCategoryModal(false);
+      setEditingMainCategory(null);
+      if (refetchCategories) refetchCategories();
+      if (refetchProducts) refetchProducts();
+      fetchAdminCategories();
+      fetchAdminProducts();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to save main category');
+    }
+  };
+
   // Coupon Actions
   const handleCreateCoupon = async (e) => {
     e.preventDefault();
@@ -681,7 +729,8 @@ const compressImageFile = (file) => {
       <div className="flex items-center gap-2 border-b border-[#EFE6D8] overflow-x-auto pb-2">
         {[
           { id: 'analytics', label: 'Analytics Dashboard', icon: LayoutDashboard },
-          { id: 'categories', label: 'Subcategories', icon: Layers },
+          { id: 'main-categories', label: 'Main Categories', icon: FolderTree },
+          { id: 'subcategories', label: 'Subcategories', icon: Layers },
           { id: 'products', label: 'Catalog Manager', icon: ShoppingBag },
           { id: 'orders', label: 'Order Fulfillment', icon: Package },
           { id: 'coupons', label: 'Coupons & Discounts', icon: Tag },
@@ -747,8 +796,80 @@ const compressImageFile = (file) => {
         </div>
       )}
 
-      {/* 2. Rakhi Subcategories Tab */}
-      {activeTab === 'categories' && (
+      {/* 2. Main Categories Section */}
+      {activeTab === 'main-categories' && (
+        <div className="glass-panel p-6 rounded-3xl border border-[#D4B896]/40 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="font-serif-display text-xl font-semibold text-[#3A342E] flex items-center gap-2">
+                <FolderTree className="w-5 h-5 text-[#D4B896]" /> Main Categories Management
+              </h2>
+              <p className="text-xs text-[#3A342E]/70 mt-1">
+                Manage top-level parent categories across the catalog (Special Collections, Sweets, Gifts, Combos, etc.).
+              </p>
+            </div>
+            <button
+              onClick={() => handleOpenMainCategoryModal()}
+              className="px-5 py-2.5 bg-[#3A342E] text-[#FAF7F2] text-xs uppercase font-semibold tracking-wider rounded-xl hover:bg-[#9CAF97] transition-all flex items-center gap-2 shadow-sm shrink-0"
+            >
+              <Plus className="w-4 h-4 text-[#D4B896]" /> Add Main Category
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {(parentCategories || []).map((mainCat, idx) => {
+              const subCount = adminCategories.filter(c => (c.parentCategory || 'Special Collections').toLowerCase() === mainCat.toLowerCase()).length;
+              const prodCount = adminProducts.filter(p => (p.category || 'Special Collections').toLowerCase() === mainCat.toLowerCase()).length;
+              return (
+                <div
+                  key={idx}
+                  className="bg-white/80 rounded-2xl p-5 border border-[#EFE6D8] space-y-4 hover:shadow-md transition-all relative group"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="w-10 h-10 rounded-xl bg-amber-100/80 flex items-center justify-center text-[#3A342E]">
+                      <FolderTree className="w-5 h-5 text-[#D4B896]" />
+                    </div>
+                    <button
+                      onClick={() => handleOpenMainCategoryModal(mainCat)}
+                      className="p-1.5 text-[#3A342E]/70 hover:text-[#9CAF97] transition-colors"
+                      title="Rename / Edit Main Category"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div>
+                    <h3 className="font-serif-display font-semibold text-base text-[#3A342E] truncate">{mainCat}</h3>
+                    <p className="text-[11px] text-[#3A342E]/70 mt-0.5">Top-Level Catalog Section</p>
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-2 border-t border-[#EFE6D8]/60 text-xs">
+                    <div className="bg-[#FAF7F2] px-2.5 py-1 rounded-lg border border-[#D4B896]/30">
+                      <span className="font-bold text-[#3A342E]">{subCount}</span> <span className="text-[10px] text-[#3A342E]/70">Subcategories</span>
+                    </div>
+                    <div className="bg-[#FAF7F2] px-2.5 py-1 rounded-lg border border-[#D4B896]/30">
+                      <span className="font-bold text-[#3A342E]">{prodCount}</span> <span className="text-[10px] text-[#3A342E]/70">Products</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setSelectedSubcatMainFilter(mainCat);
+                      setActiveTab('subcategories');
+                    }}
+                    className="w-full text-center py-2 bg-[#FAF7F2] hover:bg-[#3A342E] hover:text-white text-[#3A342E] font-semibold text-xs uppercase tracking-wider rounded-xl transition-all border border-[#D4B896]/40"
+                  >
+                    Manage Subcategories &rarr;
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 3. Subcategories Section */}
+      {activeTab === 'subcategories' && (
         <div className="glass-panel p-6 rounded-3xl border border-[#D4B896]/40 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -756,7 +877,7 @@ const compressImageFile = (file) => {
                 <Layers className="w-5 h-5 text-[#D4B896]" /> Catalog Subcategories Management
               </h2>
               <p className="text-xs text-[#3A342E]/70 mt-1">
-                Manage the circular avatar subcategories across all main categories (Rakhis, Sweets, Gifts, Combos) for header, homepage, and shop catalog.
+                Manage circular avatar subcategories organized under top-level parent categories.
               </p>
             </div>
             <button
@@ -767,72 +888,114 @@ const compressImageFile = (file) => {
             </button>
           </div>
 
+          {/* Filter & Search Bar */}
+          <div className="flex flex-col sm:flex-row items-center gap-3 p-3 bg-white/60 rounded-2xl border border-[#EFE6D8]">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <span className="text-xs font-bold text-[#3A342E] shrink-0">Main Category:</span>
+              <select
+                value={selectedSubcatMainFilter}
+                onChange={(e) => setSelectedSubcatMainFilter(e.target.value)}
+                className="p-2 rounded-xl border border-[#D4B896]/50 bg-white text-xs font-semibold text-[#3A342E] outline-none"
+              >
+                <option value="All">All Main Categories</option>
+                {(parentCategories || []).map(p => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="relative flex-1 w-full">
+              <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search subcategory name..."
+                value={subcatSearchQuery}
+                onChange={(e) => setSubcatSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-[#D4B896]/50 bg-white text-[#3A342E] outline-none"
+              />
+            </div>
+          </div>
+
           {loadingCategories ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
                 <div key={n} className="h-36 bg-white/50 rounded-2xl animate-pulse"></div>
               ))}
             </div>
-          ) : adminCategories.length === 0 ? (
-            <div className="text-center py-12 bg-white/40 rounded-2xl border border-[#EFE6D8]">
-              <Layers className="w-8 h-8 text-[#D4B896] mx-auto mb-2" />
-              <p className="text-sm font-medium text-[#3A342E]">No subcategories found</p>
-              <button
-                onClick={() => handleOpenCategoryModal()}
-                className="mt-3 px-4 py-2 bg-[#9CAF97] text-white text-xs uppercase rounded-lg font-semibold"
-              >
-                Create First Subcategory
-              </button>
-            </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {adminCategories.map(cat => (
-                <div
-                  key={cat._id}
-                  className="bg-white/80 rounded-2xl p-4 border border-[#EFE6D8] flex items-center gap-3.5 relative group hover:shadow-md transition-all"
-                >
-                  {/* Circle Thumbnail */}
-                  <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-[#D4B896] shrink-0 bg-stone-100">
-                    <img
-                      src={getImageUrl(cat.image, DEFAULT_CATEGORY_IMAGE)}
-                      alt={cat.name}
-                      onError={(e) => { e.target.src = DEFAULT_CATEGORY_IMAGE; }}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+            (() => {
+              const filteredCats = adminCategories.filter(cat => {
+                const matchesMain = selectedSubcatMainFilter === 'All' || (cat.parentCategory || 'Special Collections').toLowerCase() === selectedSubcatMainFilter.toLowerCase();
+                const matchesSearch = !subcatSearchQuery || cat.name.toLowerCase().includes(subcatSearchQuery.toLowerCase());
+                return matchesMain && matchesSearch;
+              });
 
-                  <div className="flex-1 min-w-0 pr-12">
-                    <h3 className="font-serif-display font-semibold text-sm text-[#3A342E] truncate">{cat.name}</h3>
-                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-[#3A342E]">
-                        {cat.parentCategory || 'Rakhis'}
-                      </span>
-                      <span className={`inline-block text-[9px] uppercase font-bold px-2 py-0.5 rounded-full ${cat.isActive ? 'bg-[#9CAF97]/20 text-[#9CAF97]' : 'bg-stone-200 text-stone-600'}`}>
-                        {cat.isActive ? 'Active' : 'Disabled'}
-                      </span>
+              if (filteredCats.length === 0) {
+                return (
+                  <div className="text-center py-12 bg-white/40 rounded-2xl border border-[#EFE6D8]">
+                    <Layers className="w-8 h-8 text-[#D4B896] mx-auto mb-2" />
+                    <p className="text-sm font-medium text-[#3A342E]">No subcategories found for selected filter</p>
+                    <button
+                      onClick={() => handleOpenCategoryModal()}
+                      className="mt-3 px-4 py-2 bg-[#9CAF97] text-white text-xs uppercase rounded-lg font-semibold"
+                    >
+                      Create Subcategory
+                    </button>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {filteredCats.map(cat => (
+                    <div
+                      key={cat._id}
+                      className="bg-white/80 rounded-2xl p-4 border border-[#EFE6D8] flex items-center gap-3.5 relative group hover:shadow-md transition-all"
+                    >
+                      {/* Circle Thumbnail */}
+                      <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-[#D4B896] shrink-0 bg-stone-100">
+                        <img
+                          src={getImageUrl(cat.image, DEFAULT_CATEGORY_IMAGE)}
+                          alt={cat.name}
+                          onError={(e) => { e.target.src = DEFAULT_CATEGORY_IMAGE; }}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+
+                      <div className="flex-1 min-w-0 pr-12">
+                        <h3 className="font-serif-display font-semibold text-sm text-[#3A342E] truncate">{cat.name}</h3>
+                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-[#3A342E]">
+                            {cat.parentCategory || 'Special Collections'}
+                          </span>
+                          <span className={`inline-block text-[9px] uppercase font-bold px-2 py-0.5 rounded-full ${cat.isActive ? 'bg-[#9CAF97]/20 text-[#9CAF97]' : 'bg-stone-200 text-stone-600'}`}>
+                            {cat.isActive ? 'Active' : 'Disabled'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="absolute top-4 right-3 flex items-center gap-1">
+                        <button
+                          onClick={() => handleOpenCategoryModal(cat)}
+                          className="p-1.5 text-[#3A342E]/70 hover:text-[#9CAF97] transition-colors"
+                          title="Edit Subcategory"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCategory(cat._id)}
+                          className="p-1.5 text-red-400 hover:text-red-600 transition-colors"
+                          title="Delete Subcategory"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="absolute top-4 right-3 flex items-center gap-1">
-                    <button
-                      onClick={() => handleOpenCategoryModal(cat)}
-                      className="p-1.5 text-[#3A342E]/70 hover:text-[#9CAF97] transition-colors"
-                      title="Edit Category"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteCategory(cat._id)}
-                      className="p-1.5 text-red-400 hover:text-red-600 transition-colors"
-                      title="Delete Category"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              );
+            })()
           )}
         </div>
       )}
@@ -1117,6 +1280,56 @@ const compressImageFile = (file) => {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Main Category Modal (Add / Rename Main Category) */}
+      {showMainCategoryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div onClick={() => setShowMainCategoryModal(false)} className="absolute inset-0 bg-[#3A342E]/40 backdrop-blur-xs"></div>
+          <div className="relative w-full max-w-md glass-modal rounded-2xl p-6 shadow-2xl border border-[#D4B896]/50 space-y-4">
+            <h3 className="font-serif-display text-xl font-semibold text-[#3A342E]">
+              {editingMainCategory ? 'Rename Main Category' : 'Add New Main Category'}
+            </h3>
+            <form onSubmit={handleSaveMainCategory} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold mb-1 text-[#3A342E]">Main Category Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Special Collections, Sweets, Gifts"
+                  value={mainCategoryForm.name}
+                  onChange={(e) => setMainCategoryForm({ ...mainCategoryForm, name: e.target.value })}
+                  className="w-full p-2.5 rounded-lg border border-[#D4B896]/50 bg-white text-sm font-semibold text-[#3A342E]"
+                />
+              </div>
+
+              {editingMainCategory && (
+                <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-[#3A342E] space-y-1">
+                  <p className="font-bold text-[11px]">Notice:</p>
+                  <p className="text-[11px] text-[#3A342E]/80">
+                    Renaming "{editingMainCategory}" will automatically update all matching subcategories and products in the database.
+                  </p>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowMainCategoryModal(false)}
+                  className="px-4 py-2 uppercase font-semibold text-[#3A342E]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2 bg-[#3A342E] text-white uppercase font-semibold rounded-lg hover:bg-[#9CAF97] transition-all"
+                >
+                  Save Main Category
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
