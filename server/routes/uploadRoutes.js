@@ -37,7 +37,7 @@ const upload = multer({
   }
 });
 
-// Helper: Stream buffer to Cloudinary with 5-second max timeout & local fallback
+// Helper: Process image buffer & upload to Cloudinary with 30-second timeout & local fallback
 const processImageBuffer = async (buffer, originalname, mimeType = null) => {
   let ext = path.extname(originalname || '').toLowerCase();
   if (!ext || ext === '') {
@@ -46,7 +46,7 @@ const processImageBuffer = async (buffer, originalname, mimeType = null) => {
   const filename = `img-${Date.now()}-${Math.round(Math.random() * 1E6)}${ext}`;
   const localFilePath = path.join(uploadDir, filename);
 
-  // Always write local file synchronously for instant 0-lag fallback
+  // Write local file as immediate fallback
   fs.writeFileSync(localFilePath, buffer);
   const localUrl = `/uploads/${filename}`;
 
@@ -54,50 +54,33 @@ const processImageBuffer = async (buffer, originalname, mimeType = null) => {
     return localUrl;
   }
 
-  return new Promise((resolve) => {
-    let resolved = false;
-    const timeoutTimer = setTimeout(() => {
-      if (!resolved) {
-        resolved = true;
-        console.warn('Cloudinary upload timed out (>5s) -> using local file URL fallback:', localUrl);
-        resolve(localUrl);
-      }
-    }, 5000);
+  try {
+    const mime = mimeType || (ext === '.webp' ? 'image/webp' : ext === '.png' ? 'image/png' : 'image/jpeg');
+    const base64Data = `data:${mime};base64,${buffer.toString('base64')}`;
 
-    try {
-      const uploadOptions = {
-        folder: 'parampara_catalog',
-        resource_type: 'auto'
-      };
+    const uploadOptions = {
+      folder: 'parampara_catalog',
+      resource_type: 'auto'
+    };
 
-      // Only add image optimization transformations for standard raster image formats
-      if (['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) {
-        uploadOptions.transformation = [{ width: 1200, crop: 'limit', quality: 'auto', fetch_format: 'auto' }];
-      }
-
-      const uploadStream = cloudinary.uploader.upload_stream(
-        uploadOptions,
-        (error, result) => {
-          clearTimeout(timeoutTimer);
-          if (!resolved) {
-            resolved = true;
-            if (error || !result || !result.secure_url) {
-              console.warn('Cloudinary upload warning (using local fallback):', error?.message || error);
-              return resolve(localUrl);
-            }
-            resolve(result.secure_url);
-          }
-        }
-      );
-      uploadStream.end(buffer);
-    } catch (err) {
-      clearTimeout(timeoutTimer);
-      if (!resolved) {
-        resolved = true;
-        resolve(localUrl);
-      }
+    if (['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) {
+      uploadOptions.transformation = [{ width: 1200, crop: 'limit', quality: 'auto', fetch_format: 'auto' }];
     }
-  });
+
+    const result = await Promise.race([
+      cloudinary.uploader.upload(base64Data, uploadOptions),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Cloudinary upload timeout (>30s)')), 30000))
+    ]);
+
+    if (result && result.secure_url) {
+      console.log('✔ Successfully uploaded image to Cloudinary CDN:', result.secure_url);
+      return result.secure_url;
+    }
+    return localUrl;
+  } catch (err) {
+    console.warn('⚠️ Cloudinary Upload Error (falling back to local URL):', err.message || err);
+    return localUrl;
+  }
 };
 
 // @desc    Upload single image (Supports WebP, PNG, JPG, GIF, SVG, AVIF, HEIC)
