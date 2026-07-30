@@ -1191,7 +1191,7 @@ const compressImageFile = (file) => {
                     className="w-full p-2.5 rounded-lg border border-[#D4B896]/50 bg-white font-semibold"
                   />
                   <datalist id="parent-category-options">
-                    {(parentCategories && parentCategories.length > 0 ? parentCategories : ['Special Collections', 'Sweets', 'Gifts', 'Combos']).map(p => (
+                    {(parentCategories || []).map(p => (
                       <option key={p} value={p}>{p}</option>
                     ))}
                   </datalist>
@@ -1272,7 +1272,7 @@ const compressImageFile = (file) => {
                     className="w-full p-2.5 rounded-lg border border-[#D4B896]/50 bg-white font-semibold"
                   />
                   <datalist id="product-category-options">
-                    {(parentCategories && parentCategories.length > 0 ? parentCategories : ['Special Collections', 'Sweets', 'Gifts', 'Combos']).map(p => (
+                    {(parentCategories || []).map(p => (
                       <option key={p} value={p}>{p}</option>
                     ))}
                   </datalist>

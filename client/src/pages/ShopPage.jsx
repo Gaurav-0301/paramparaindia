@@ -23,7 +23,7 @@ const ShopPage = () => {
   const [viewMode, setViewMode] = useState('sections');
 
   // Derive categories dynamically from database via parentCategories
-  const categories = ['All', ...(parentCategories && parentCategories.length > 0 ? parentCategories : ['Special Collections', 'Sweets', 'Gifts', 'Combos'])];
+  const categories = ['All', ...(parentCategories || [])];
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);

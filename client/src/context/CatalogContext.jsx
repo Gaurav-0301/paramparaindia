@@ -40,8 +40,7 @@ export const CatalogProvider = ({ children }) => {
     const fromProducts = products.map(p => p.category).filter(Boolean);
     const set = new Set([...fromCategories, ...fromProducts]);
     const list = Array.from(set).map(cat => (cat.toLowerCase() === 'rakhis' ? 'Special Collections' : cat));
-    const unique = Array.from(new Set(list));
-    return unique.length > 0 ? unique : ['Special Collections', 'Sweets', 'Gifts', 'Combos'];
+    return Array.from(new Set(list));
   }, [categories, products]);
 
   const getSubcategoriesForCategory = useCallback((parentCategory) => {
